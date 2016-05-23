@@ -1,0 +1,13 @@
+Clippy Setup Instructions
+
+Clippy pops up and displays provided text. This requires some one-time setup from an elevated RDP session:
+	- Download this Windows hotfix for the correct architecture - http://support.microsoft.com/kb/969168
+	- Download this hotfix to get the Clippy .acs animation file (clippit.acs). The hotfix will unzip the needed file.
+	- http://www.microsoft.com/en-us/download/details.aspx?id=11215
+	- Upload the first hotfix and clippit.acs
+	- Install the hotfix via an RDP session on the target host
+	- Move CLIPPIT.acs to c:\windows\msagent\chars\
+
+
+Based upon this blog post by mellowtrigger:
+https://mellowtigger.dreamwidth.org/250130.html

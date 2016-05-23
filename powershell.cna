@@ -1,0 +1,97 @@
+#
+# For this to work, you must put the PowerUp.ps1 and powerview.ps1 files in the same directory as this script
+#
+
+# quickly run PowerUp (alias)
+alias powerup {
+	bpowershell_import($1, script_resource("PowerUp.ps1"));
+	bpowershell($1, "Invoke-AllChecks");
+}
+
+sub powerup {
+	bpowershell_import($1, script_resource("PowerUp.ps1"));
+	bpowershell($1, "Invoke-AllChecks");
+}
+
+sub userhunter {
+	bpowershell_import($1, script_resource("powerview.ps1"));
+	bpowershell($1, "Invoke-UserHunter");	
+}
+
+sub userhunter_stealth {
+	bpowershell_import($1, script_resource("powerview.ps1"));
+	bpowershell($1, "Invoke-UserHunter -Stealth");	
+}
+
+sub findlocaladmin {
+	bpowershell_import($1, script_resource("powerview.ps1"));
+	bpowershell($1, "Find-LocalAdminAccess");	
+}
+
+sub sharefinder {
+	bpowershell_import($1, script_resource("powerview.ps1"));
+	bpowershell($1, "Invoke-FileFinder -ShareList");	
+}
+
+
+
+popup beacon_bottom {
+	menu "Powershell" {		
+		item "PowerUp" {
+			if (-exists script_resource("PowerUp.ps1")) {
+				local('$bid');
+				foreach $bid ($1) {
+					powerup($bid);
+				}
+			}
+			else {
+        		berror($1, "PowerUp.ps1 does not exist :(");
+    		}
+		}
+		item "UserHunter" {
+			if (-exists script_resource("powerview.ps1")) {		
+				local('$bid');
+				foreach $bid ($1) {
+					userhunter($bid);
+				}
+			}
+			else {
+        		berror($1, "powerview.ps1 does not exist :(");
+    		}
+		}
+		item "UserHunter (Stealth)" {
+			if (-exists script_resource("powerview.ps1")) {		
+				local('$bid');
+				foreach $bid ($1) {
+					userhunter_stealth($bid);
+				}
+			}
+			else {
+        		berror($1, "powerview.ps1 does not exist :(");
+    		}
+		}
+		item "Find-LocalAdminAccess" {
+			if (-exists script_resource("powerview.ps1")) {		
+				local('$bid');
+				foreach $bid ($1) {
+					findlocaladmin($bid);
+				}
+			}
+			else {
+        		berror($1, "powerview.ps1 does not exist :(");
+    		}
+		}
+		item "Sharefinder" {
+			if (-exists script_resource("powerview.ps1")) {		
+				local('$bid');
+				foreach $bid ($1) {
+					sharefinder($bid);
+				}
+			}
+			else {
+        		berror($1, "powerview.ps1 does not exist :(");
+    		}
+		}
+
+	}
+}
