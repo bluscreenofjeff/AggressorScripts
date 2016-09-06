@@ -1,0 +1,403 @@
+# author: bluescreenofjeff
+
+#thanks to @harmj0y for his veil script and GUI guidance:
+#https://github.com/HarmJ0y/cortana/blob/master/veil_evasion/veil_evasion.cna
+
+#
+#	Provides a configuration to automatically set sleep interval based on the time
+#
+
+# This script is overly-commented to supplement my blog post on making GUIs for Aggressor scripts
+# https://bluescreenofjeff.com/2016-9-6-adding-east-guis-to-aggressor-scripts/
+
+# needed imports for custom menu creation
+import java.awt.*; # for borderlayout
+import javax.swing.*; # for jpanel
+import javax.swing.table.*; #tablerowsorter
+import table.*; # generictablemodel
+import ui.*; #atable
+
+import javax.swing.JPanel;
+import java.awt.GridLayout;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JSpinner;
+import javax.swing.JTextPane;
+import javax.swing.JButton;
+import javax.swing.GroupLayout;
+import javax.swing.GroupLayout.*;
+import javax.swing.BoxLayout;
+import javax.swing.JLabel;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.JTextField;
+import java.awt.FlowLayout;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.JCheckBox;
+import java.awt.Font;
+
+#configure global default settings
+global('%sleepsettings');
+%sleepsettings["sleep"] = "60";
+%sleepsettings["jitter"] = "5";
+%sleepsettings["heartbeat"] = "False";
+%sleepsettings["enabled"] = "False";
+%sleepsettings["from_h"] = "20";
+%sleepsettings["from_m"] = "00";
+%sleepsettings["to_h"] = "06";
+%sleepsettings["to_m"] = "00";
+
+# constructs the config popup and saves settings
+sub SleepingHoursConfigPopup {
+
+	local('$saveButton $cancelButton');
+
+	# main title and dimensions of the dialog box
+	$dialog = dialog("Sleeping Hours Settings", 500, 350);
+
+	#creating the panel 
+	$containerPane = [new JPanel];
+		[$containerPane setLayout: [new GridLayout: 8, 1, 0, 0]];
+			
+		#creates the panel with the instruction textArea
+		$Instructionspanel = [new JPanel];
+		[$Instructionspanel setLayout: [new GridLayout: 0, 1, 0, 0]];
+			
+			$scrollPane = [new JScrollPane];
+			[$Instructionspanel add: $scrollPane];
+			
+			$txtrConfigureSleepDuration = [new JTextArea];
+			[$txtrConfigureSleepDuration setText: "Configure sleep duration to apply to all Beacons  \nduring the specified time range. Outside of the time range,\n a sleep setting of 60s is configured."];
+			[$txtrConfigureSleepDuration setEditable: false];
+			[$scrollPane setViewportView: $txtrConfigureSleepDuration];
+		#adds the newly-created Instructionspanel object to the containerPane object
+		[$containerPane add: $Instructionspanel];			
+
+		#creates the panel for the 'Sleep for' row
+		$SleepForpanel = [new JPanel];
+		[$SleepForpanel setLayout: [new FlowLayout: [FlowLayout CENTER], 5, 5]];
+		
+			$label = [new JLabel: "Sleep for"];
+			[$SleepForpanel add: $label];
+			
+			$SLEEPVALUE = [new JTextField];
+			[$SleepForpanel add: $SLEEPVALUE];
+			[$SLEEPVALUE setColumns: 10];
+			
+			$lblNewLabel = [new JLabel: "seconds [jitter %]"];
+			[$SleepForpanel add: $lblNewLabel];
+		[$containerPane add: $SleepForpanel];
+			
+		#creates the panel for the sleep starting time row
+		$Frompanel = [new JPanel];
+		[$Frompanel setLayout: [new FlowLayout: [FlowLayout CENTER], 5, 5]];
+			
+			$lblFrom = [new JLabel: "From"];
+			[$Frompanel add: $lblFrom];
+			
+			$spinner = [new JSpinner];
+			[$spinner setModel: [new SpinnerNumberModel: 0, 0, 23, 1]];
+			[$Frompanel add: $spinner];
+			
+			$lblH = [new JLabel: "h"];
+			[$Frompanel add: $lblH];
+			
+			$spinner_1 = [new JSpinner];
+			[$spinner_1 setModel: [new SpinnerNumberModel: 0, 0, 59, 1]];
+			[$Frompanel add: $spinner_1];
+			
+			$lblM = [new JLabel: "m"];
+			[$Frompanel add: $lblM];
+			
+			[$containerPane add: $Frompanel];
+
+		#creates the panel for the sleep ending time row	
+		$Topanel = [new JPanel];
+		$fl_Topanel = [new FlowLayout: [FlowLayout CENTER], 5, 5];
+		[$Topanel setLayout: $fl_Topanel];
+			
+			$lblNewLabel_1 = [new JLabel: "To"];
+			[$Topanel add: $lblNewLabel_1];
+			
+			$spinner_2 = [new JSpinner];
+			[$spinner_2 setModel: [new SpinnerNumberModel: 0, 0, 23, 1]];
+			[$Topanel add: $spinner_2];
+			
+			$lblH_1 = [new JLabel: "h"];
+			[$Topanel add: $lblH_1];
+			
+			$spinner_3 = [new JSpinner];
+			[$spinner_3 setModel: [new SpinnerNumberModel: 0, 0, 59, 1]];
+			[$Topanel add: $spinner_3];
+			
+			$lblM_1 = [new JLabel: "m"];
+			[$Topanel add: $lblM_1];
+
+			[$containerPane add: $Topanel];
+		
+		#creates the panel for the timezone note row	
+		$timezonePanel = [new JPanel];
+			
+			#pulls the teamserver's local timezone and populates the label with the data
+			$lbltimesAreIn = [new JLabel: "(times are in " . formatDate("z") . ")"];
+			[$lbltimesAreIn setFont: [new Font: "Dialog", [Font ITALIC], 10]];
+			[$timezonePanel add: $lbltimesAreIn];
+
+		[$containerPane add: $timezonePanel];
+			
+		#creates the panel for the 'heartbeat' checkbox row	
+		$heartbeatPanel = [new JPanel];
+		[$heartbeatPanel setLayout: [new FlowLayout: [FlowLayout CENTER], 5, 5]];
+			
+			$heartbeatCheckBox = [new JCheckBox: "Reset sleep setting every 60s during specified period"];
+			[$heartbeatPanel add: $heartbeatCheckBox];
+
+			[$containerPane add: $heartbeatPanel];
+
+		#creates the panel for the 'Enabled' checkbox row
+		$enabledpanel = [new JPanel];
+		[$enabledpanel setLayout: [new FlowLayout: [FlowLayout CENTER], 5, 5]];
+			
+			$enabledCheckBox = [new JCheckBox: "Enable sleep timer"];
+			[$enabledpanel add: $enabledCheckBox];
+
+			[$containerPane add: $enabledpanel];
+	
+		#creates the panel for the row of buttons
+		$Buttonspanel = [new JPanel];
+		[$Buttonspanel setLayout: [new FlowLayout: [FlowLayout CENTER], 5, 5]];
+			
+			$btnSave = [new JButton: "Save"];
+			[$Buttonspanel add: $btnSave];
+			
+			$btnCancel = [new JButton: "Cancel"];
+			[$Buttonspanel add: $btnCancel];
+
+			[$containerPane add: $Buttonspanel];
+
+	#adds the containerPanel (which contains all of the above panels) to the dialog object
+	[$dialog add: $containerPane];   
+
+	#Lines 182 - 203 fill in the input fields with previously saved settings
+
+	# read sleepsettings to set dialog settings. add jitter to field if the value is non-zero
+	if (%sleepsettings["jitter"] eq "0") {
+		[$SLEEPVALUE setText: %sleepsettings["sleep"]];
+	}
+	else {
+		[$SLEEPVALUE setText: %sleepsettings["sleep"] . " " . %sleepsettings["jitter"]];
+	}
+	
+	if (%sleepsettings["heartbeat"] eq "True"){
+		[$heartbeatCheckBox setSelected: 1]
+	};
+	if (%sleepsettings["enabled"] eq "True"){
+		[$enabledCheckBox setSelected: 1]
+	};
+	
+	# spinners must be set to integers by instantiating a new object
+	[$spinner setValue: [new Integer: %sleepsettings["from_h"]]];
+
+	[$spinner_1 setValue: [new Integer: %sleepsettings["from_m"]]];
+	
+	[$spinner_2 setValue: [new Integer: %sleepsettings["to_h"]]];
+	
+	[$spinner_3 setValue: [new Integer: %sleepsettings["to_m"]]];
+
+	# make the dialog visible
+	[$dialog setVisible: 1];
+
+
+    # Cancel button actions
+    [$btnCancel addActionListener: lambda({
+        [$dialog setVisible: 0]; 
+        })];
+
+    # Save button actions (lines 218 - 270)
+    [$btnSave addActionListener: lambda({
+        
+        #save sleep value
+        $sleeptext = [$SLEEPVALUE getText];
+        @sleeparray = split(" ",$sleeptext);
+        #catch errors for any sleep values where the sleep value is less than 0 or contains a non-digit
+        if ((int(@sleeparray[0]) < 0) || (@sleeparray[0] hasmatch '[^0-9]')) {
+        	show_error("Please enter a valid 'Sleep for' setting.");
+        	break;
+        }
+        else if (size(@sleeparray) == 1){
+        	%sleepsettings["sleep"] = $sleeptext;
+        	%sleepsettings["jitter"] = "0";
+        }
+        else if (size(@sleeparray) == 2) {
+        	%sleepsettings["sleep"] = @sleeparray[0];
+        	#error catching for jitter values not within 0 and 99
+        	if ((int(@sleeparray[1]) >= 0) && (int(@sleeparray[1]) <= 99)) {
+        		%sleepsettings["jitter"] = @sleeparray[1];
+        	}
+        	else {
+        		show_error("Please enter a jitter value between 0 - 99.");
+        		break;
+        	}
+        }
+        else {
+        	show_error("Please enter a valid 'Sleep for' setting.");
+        	break;
+        }
+
+    	#save heartbeat checkbox
+    	if ([$heartbeatCheckBox isSelected] == 1) {
+			%sleepsettings["heartbeat"] = "True";
+		}
+		else {
+			%sleepsettings["heartbeat"] = "False";				
+		}
+
+    	#save enabled checkbox
+    	if ([$enabledCheckBox isSelected] == 1) {
+			%sleepsettings["enabled"] = "True";
+		}
+		else {
+			%sleepsettings["enabled"] = "False";				
+		}
+
+		#save from and to time values
+		%sleepsettings["from_h"] = [$spinner getValue];
+		%sleepsettings["from_m"] = [$spinner_1 getValue];
+		%sleepsettings["to_h"] = [$spinner_2 getValue];
+		%sleepsettings["to_m"] = [$spinner_3 getValue];
+
+		#log saved settings to event log
+		elog("Beacons will sleep for " . %sleepsettings["sleep"] . "s with " . %sleepsettings["jitter"] . "% jitter from " . %sleepsettings["from_h"] . "h " . %sleepsettings["from_m"] . "m to " . %sleepsettings["to_h"] . "h " . %sleepsettings["to_m"] . "m " . formatDate("z") . ".");
+
+        [$dialog setVisible: 0]; 
+        })];
+};
+
+#logic to test if sleeping hours are active
+sub testSleepingHours {
+	$currentHour = int(formatDate('HH'));
+	$currentMin = int(formatDate('mm'));
+	if (%sleepsettings["from_h"] > %sleepsettings["to_h"]) {
+		if (($currentHour > %sleepsettings["from_h"]) || ($currentHour < %sleepsettings["to_h"])){
+			return "True";
+		}
+		else if (($currentHour == %sleepsettings["from_h"]) && ($currentMin >= %sleepsettings["from_m"])){
+			return "True";
+		}
+		else if (($currentHour == %sleepsettings["to_h"]) && ($currentMin <= %sleepsettings["to_m"])){
+			return "True";
+		}
+		else {
+			return "False";
+		}
+	}
+	else if (%sleepsettings["from_h"] < %sleepsettings["to_h"]) {
+		if (($currentHour > %sleepsettings["from_h"]) && ($currentHour < %sleepsettings["to_h"])){
+			return "True";
+		}
+		else if (($currentHour == %sleepsettings["from_h"]) && ($currentMin >= %sleepsettings["from_m"])){
+			return "True";
+		}
+		else if (($currentHour == %sleepsettings["to_h"]) && ($currentMin <= %sleepsettings["to_m"])){
+			return "True";
+		}
+		else {
+			return "False";
+		}		
+	}
+	else if (%sleepsettings["from_h"] == %sleepsettings["to_h"]) {
+		if (($currentMin >= %sleepsettings["from_m"]) && ($currentMin <= %sleepsettings["to_m"])) {
+			return "True";
+		}
+		else {
+			return "False";
+		}
+	}
+	else {
+		return "False";
+	}
+};
+
+#function to change the sleep timer on all hosts
+# $1 = sleep value, $2 = jitter value
+sub sleepAll {
+	foreach $beacon (beacons()) {
+	$id = $beacon['id'];
+	binput($id, "sleep $1 $2");
+	bsleep($id, $1, $2);
+    }
+}
+
+#scalars used to avoid the start, end, and heartbeats running multiple times per minute and starting the sleep cycle sooner in the minute
+global('$processonce_value $heartbeat_skip');
+$processonce_value = "False";
+$heartbeat_skip = "False";
+
+
+on heartbeat_30s {
+	$currentHour = formatDate('HH');
+	$currentMin = formatDate('mm');
+
+
+	if (%sleepsettings["enabled"] eq "False") {
+		$processonce_value = "False";
+	}
+	#start of sleeping hours
+	else if (($currentHour == %sleepsettings["from_h"]) && ($currentMin == %sleepsettings["from_m"])) {
+		if ($processonce_value eq "False") {
+			elog("Starting sleeping hours");
+			sleepAll(%sleepsettings["sleep"],%sleepsettings["jitter"]);
+			$processonce_value = "True";
+		}
+	}
+	#end of sleeping hours
+	else if (($currentHour == %sleepsettings["to_h"]) && ($currentMin == %sleepsettings["to_m"])) {
+		if ($processonce_value eq "False") {
+			elog("Ending sleeping hours");
+			sleepAll(60,0);
+			$processonce_value = "True";
+		}
+	}
+	else if ((testSleepingHours() eq "True") && (%sleepsettings["heartbeat"] eq "True")) {
+		sleepAll(%sleepsettings["sleep"],%sleepsettings["jitter"]);
+		$heartbeat_skip = "True";
+	}
+	else {
+		$processonce_value = "False";
+		$heartbeat_skip = "False";
+	}	
+}
+
+#set up an alias for "sleeptimer"
+alias sleeptimer {
+	SleepingHoursConfigPopup();
+}
+
+#menubar options
+menubar("Sleeping Hours", "SleepingHours", 2);
+
+# modify the main "Attacks" menu
+popup SleepingHours {
+	item "Configure Settings" {
+		SleepingHoursConfigPopup();
+	}
+
+}
+
+
+###################################################
+#
+# GUI Helper Methods
+#   these are all from armitage/scripts/gui.sl
+#
+###################################################
+
+# helper, from armitage/scripts/gui.sl
+sub dialog {
+	local('$dialog');
+		$dialog = [new JDialog: $__frame__, $1];
+		[$dialog setSize: $2, $3];
+		[$dialog setLayout: [new BorderLayout]];
+		[$dialog setLocationRelativeTo: $__frame__];
+	return $dialog;
+}
+
