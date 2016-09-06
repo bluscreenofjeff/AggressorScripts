@@ -8,7 +8,7 @@
 #
 
 # This script is overly-commented to supplement my blog post on making GUIs for Aggressor scripts
-# https://bluescreenofjeff.com/2016-9-6-adding-east-guis-to-aggressor-scripts/
+# https://bluescreenofjeff.com/2016-9-7-adding-east-guis-to-aggressor-scripts/
 
 # needed imports for custom menu creation
 import java.awt.*; # for borderlayout
