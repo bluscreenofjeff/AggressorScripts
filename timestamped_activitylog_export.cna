@@ -1,0 +1,9 @@
+#author: bluescreenofjeff
+#load this script to output all event and activity logs with human-readable timestamp to activitylog.txt in your working directory
+
+foreach $key => $value (archives())
+{
+	$handle = openf(">>activitylog.txt");f
+	println($handle, dstamp($value['when']) . "\t" . $value['data'] . "\t" . $value['type']. "\t" . $value['bid']);
+	closef($handle);
+}
