@@ -3,7 +3,7 @@
 
 foreach $key => $value (archives())
 {
-	$handle = openf(">>activitylog.txt");f
-	println($handle, dstamp($value['when']) . "\t" . $value['data'] . "\t" . $value['type']. "\t" . $value['bid']);
+	$handle = openf(">>activitylog.txt");
+	println($handle, dstamp($value['when']) . " " . formatDate("z") . "\t" . $value['data'] . "\t" . $value['type']. "\t" . $value['bid']);
 	closef($handle);
 }
