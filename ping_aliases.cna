@@ -1,0 +1,28 @@
+#author bluescreenofjeff
+
+#alias for "qping" to "shell ping -n 1 [target]" and "smbscan" to "portscan [target] 445 none"
+
+#register help
+beacon_command_register("qping", "send one ping packet with shell",
+	"Synopsis: qping [target]\n\n" .
+	"Send one ping packet with the command: shell ping -n 1 [target]");
+
+#setting the alias
+alias qping {
+	binput($1,"shell ping -n 1 $2");
+	bshell($1,"ping -n 1 $2");
+}
+
+
+#register help
+beacon_command_register("smbscan", "portscans port 445 without ping discovery",
+	"Synopsis: smbscan [target]\n\n" .
+	"Scans SMB with the command: portscan [targets] none\n\n" .
+	"[targets] is a comma separated list of hosts to scan. You may also specify\n" .
+	"IPv4 address ranges (e.g., 192.168.1.128-192.168.2.240, 192.168.1.0/24)");
+
+#setting the alias
+alias smbscan {
+	binput("portscan $1 445 none");
+	bportscan($1, $2, "445", "none");
+}

@@ -1,0 +1,232 @@
+#author: bluescreenofjeff
+
+#forces SMB Beacons to check-in on a specified interval
+
+#NOTE: the "Last" attribute is not updated on checkin, output must be received
+
+
+import java.awt.EventQueue;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import java.awt.GridLayout;
+import javax.swing.JLabel;
+import javax.swing.JTextField;
+import javax.swing.JComboBox;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JCheckBox;
+import javax.swing.JButton;
+import java.awt.FlowLayout;
+
+import java.awt.*; # for borderlayout
+import javax.swing.*; # for jpanel
+import ui.*; #atable
+
+global("%checkinsettings %unitconversion")
+%checkinsettings["interval"] = "5";
+%checkinsettings["units"] = "minutes";
+%checkinsettings["jobs"] = "False";
+%checkinsettings["enabled"] = "False";
+%checkinsettings["interval_calculated"] = "300000";
+%unitconversion = %(seconds => 1000, minutes => 60000, hours => 3600000, days => 86400000, weeks => 604800000);
+
+
+sub forcecheckin_Config {
+
+	#draw the dialog box
+	$dialog = dialog("SMB Beacon Force Check-in Configuration", 450, 200);
+	$forcecheckin_contentPane = [new JPanel];
+	[$forcecheckin_contentPane setBorder: [new EmptyBorder: 5, 5, 5, 5]];
+	#$setforcecheckin_ContentPane(forcecheckin_contentPane);
+	[$forcecheckin_contentPane setLayout: [new GridLayout: 5, 1, 0, 0]];
+
+	
+	#creates the panel with the instruction textArea
+	$forcecheckin_Instructionspanel = [new JPanel];
+	[$forcecheckin_Instructionspanel setLayout: [new GridLayout: 0, 1, 0, 0]];
+
+		$forcecheckin_scrollPane = [new JScrollPane];
+
+		$forcecheckin_textArea = [new JTextArea];
+		[$forcecheckin_textArea setText: "Force SMB Beacons to check-in at specified interval."];
+		[$forcecheckin_textArea setEditable: false];
+		[$forcecheckin_scrollPane setViewportView: $forcecheckin_textArea];
+
+		[$forcecheckin_Instructionspanel add: $forcecheckin_scrollPane];
+		
+	[$forcecheckin_contentPane add: $forcecheckin_Instructionspanel];	
+		
+	$forcecheckin_Intervalpanel = [new JPanel];
+		
+		$forcecheckin_lblNewLabel = [new JLabel: "Force check-in after "];
+		[$forcecheckin_Intervalpanel add: $forcecheckin_lblNewLabel];
+		
+		$forcecheckin_textField = [new JTextField];
+		[$forcecheckin_Intervalpanel add: $forcecheckin_textField];
+		[$forcecheckin_textField setColumns: int(10)];
+
+		$forcecheckin_comboBox = [new JComboBox];
+		[$forcecheckin_comboBox setModel: [new DefaultComboBoxModel]];
+		#removed seconds to accomodate a longer heartbeat time
+		#[$forcecheckin_comboBox addItem: 'seconds'];
+		[$forcecheckin_comboBox addItem: 'minutes' ];
+		[$forcecheckin_comboBox addItem: 'hours'];
+		[$forcecheckin_comboBox addItem: 'days'];
+		[$forcecheckin_comboBox addItem: 'weeks'];
+		[$forcecheckin_Intervalpanel add: $forcecheckin_comboBox];
+
+		[$forcecheckin_contentPane add: $forcecheckin_Intervalpanel];
+
+	$forcecheckin_Jobspanel = [new JPanel];
+		[$forcecheckin_contentPane add: $forcecheckin_Jobspanel];
+		
+		$forcecheckin_JobsCheckBox = [new JCheckBox: "Run 'jobs' instead of 'checkin' (to update the Last attribute)"];
+		[$forcecheckin_Jobspanel add: $forcecheckin_JobsCheckBox];		
+		
+	$forcecheckin_Enabledpanel = [new JPanel];
+		[$forcecheckin_contentPane add: $forcecheckin_Enabledpanel];
+		
+		$forcecheckin_chckbxNewCheckBox = [new JCheckBox: "Enabled"];
+		[$forcecheckin_Enabledpanel add: $forcecheckin_chckbxNewCheckBox];
+		
+	$forcecheckin_Buttonspanel = [new JPanel];
+		[$forcecheckin_contentPane add: $forcecheckin_Buttonspanel];
+		
+		$forcecheckin_SaveButton = [new JButton: "Save"];
+		[$forcecheckin_Buttonspanel add: $forcecheckin_SaveButton];
+		
+		$forcecheckin_CancelButton = [new JButton: "Cancel"];
+		[$forcecheckin_Buttonspanel add: $forcecheckin_CancelButton];
+
+	[$dialog add: $forcecheckin_contentPane]; 
+	[$dialog setVisible: 1];
+
+
+	#button listeners
+    
+    # Cancel button actions
+    [$forcecheckin_CancelButton addActionListener: lambda({
+        [$dialog setVisible: 0]; 
+	})];
+
+    # Save button actions (lines 218 - 270)
+    [$forcecheckin_SaveButton addActionListener: lambda({
+
+    	#save and error-check interval value
+    	if ((int([$forcecheckin_textField getText]) <= 0) || ([$forcecheckin_textField getText] hasmatch '[^0-9')) {
+    		show_error("Please enter a positive integer for the forced checkin-in interval.");
+        	break;
+    	}
+    	else {
+    		%checkinsettings["interval"] = [$forcecheckin_textField getText];
+    	}
+
+    	#save units value
+    	%checkinsettings["units"] = [$forcecheckin_comboBox getSelectedItem];
+
+    	#save calculated interval
+
+    	%checkinsettings["interval_calculated"] = int(%checkinsettings["interval"]) * %unitconversion[%checkinsettings["units"]];
+    	println(%checkinsettings["interval_calculated"]);
+
+
+    	#save jobs checkbox setting
+    	if ([$forcecheckin_JobsCheckBox isSelected] == 1) {
+			%checkinsettings["jobs"] = "True";
+		}
+		else {
+			%checkinsettings["jobs"] = "False";
+		}    	
+
+    	#save enabled checkbox setting
+    	if ([$forcecheckin_chckbxNewCheckBox isSelected] == 1) {
+			%checkinsettings["enabled"] = "True";
+		}
+		else {
+			%checkinsettings["enabled"] = "False";
+		}
+
+    	if (%checkinsettings["enabled"] eq "True") {
+    		elog("Beacons will check-in every " . %checkinsettings["interval"] . " " . %checkinsettings["units"] . ".");
+    	}
+
+
+		[$dialog setVisible: 0]; 
+    })];
+
+    #fill in inputs with previously set (or default) values
+
+	#interval textField
+	[$forcecheckin_textField setText: %checkinsettings["interval"]];
+
+	#units comboBox
+	[$forcecheckin_comboBox setSelectedItem: %checkinsettings["units"]];
+
+	#jobs checkbox
+	if (%checkinsettings["jobs"] eq "True"){
+		[$forcecheckin_JobsCheckBox setSelected: 1]
+	};
+
+	#enabled checkbox
+	if (%checkinsettings["enabled"] eq "True"){
+		[$forcecheckin_chckbxNewCheckBox setSelected: 1]
+	};
+
+}
+
+#function to make SMB Beacons checkin
+sub checkin_Process {
+	foreach $beacon (beacons()){
+		if (int(binfo($beacon["id"],"last")) > int(%checkinsettings["interval_calculated"])) {
+			binput($beacon["id"],"force check-in triggered");
+
+			if (%checkinsettings["jobs"] eq "True"){
+				binput($beacon["id"],"jobs");
+				bjobs($beacon["id"]);
+			}
+			else {
+				binput($beacon["id"],"checkin");
+				bcheckin($beacon["id"]);
+			}
+			
+		}
+	}
+
+}
+
+#can set this to a lower time by changing "60s" to another accepted value (1s,10s,15s,30s,5m,30m,etc), but 
+#this can cause excessive output if SMB parent Beacon's sleep is longer than the checkin period
+on heartbeat_1m {
+	if (%checkinsettings["enabled"] eq "True"){
+		checkin_Process();
+	}
+}
+
+# helper, from armitage/scripts/gui.sl
+sub dialog {
+	local('$dialog');
+		$dialog = [new JDialog: $__frame__, $1];
+		[$dialog setSize: $2, $3];
+		[$dialog setLayout: [new BorderLayout]];
+		[$dialog setLocationRelativeTo: $__frame__];
+	return $dialog;
+}
+
+#set up an alias for "forcecheckin"
+alias forcecheckin {
+	forcecheckin_Config();
+}
+
+#menubar options
+menubar("Force Check-in", "ForceCheckin", 2);
+
+# modify the main "Attacks" menu
+popup ForceCheckin {
+	item "Configure Settings" {
+		forcecheckin_Config();
+	}
+
+}
