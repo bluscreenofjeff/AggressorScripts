@@ -1,0 +1,46 @@
+#author: bluescreenofjeff
+
+# THIS SCRIPT BREAKS CREDENTIAL NOTES IN EDIT FIELD
+# to save credentials with this script active, you must use the context menu option "Set Note..."
+
+#
+# PLEASE NOTE - THIS IS CONSIDERED A BETA SCRIPT
+# It has not been field tested yet and may interfere with normal Beacon functionality
+# Use at your own risk!
+#
+
+# Adds a timestamp to the source column in new credentials
+# Note: Adds "no timestamp" to the source column of existing creds. Modifying the credential (except the Note) will trigger a new timestamp.
+
+
+
+#function to add timestamp note to all credentials with blank notes
+sub timestampNote {
+	local('$user $password $host $realm $source $pwtimestamp $onload');
+	$onload = "False";
+	if ($1 eq "initial") {
+		$onload = "True";
+	}
+	foreach $key => $value (credentials()){
+		$user = $value['user'];
+		$password = $value['password'];
+		$host = $value['host'];
+		$realm = $value['realm'];
+		$source = $value['source'];
+		$pwtimestamp = formatDate('MM/dd/yyyy HH:mm:ss (z)');
+		if (($onload eq "True") && (($source eq 'hashdump') || ($source eq 'mimikatz'))) {		
+			credential_add("$user","$password","$realm","$source - no timestamp","$host");
+		}
+		else if (($source eq 'hashdump') || ($source eq 'mimikatz')) {
+			credential_add("$user","$password","$realm","$source - $pwtimestamp","$host");
+		}
+	}
+}
+
+#on scriptload, marks all existing credentials with source of mimikatz or hashdump with "no timestamp"
+timestampNote("initial");
+
+#on credentials, labels new creds with timestamp
+on credentials {
+	timestampNote();
+}
