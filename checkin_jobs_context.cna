@@ -1,0 +1,19 @@
+#author bluescreenofjeff
+
+#adds context menu options to run "checkin" or "jobs" on Beacon session to help detect stale beacons in bulk
+
+
+#context menu building
+popup beacon_bottom {
+	menu "Checkin"{
+		item 'Run "checkin"' {
+			binput($1, "checkin");
+			bcheckin($1);
+		}
+	    item 'Run "jobs"' {
+			binput($1, "jobs");
+			bjobs($1);
+    	}
+	}
+}
+
