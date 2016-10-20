@@ -17,7 +17,7 @@ Aggressor scripts for use with [Cobalt Strike](https://cobaltstrike.com) 3.0+
 
 **powershell.cna** - adds context items for some common Powerup and Powerview functions. For this to work, you must put the PowerUp.ps1 and powerview.ps1 files in the same directory as this script
 
-**ping_aliases.cna** - creates an alias for quick ping (one ping packet w/ shell) and smbping (to portscan smb w/o ping)
+**ping_aliases.cna** - creates an alias for quick ping (one ping packet w/ shell) and smbscan (to portscan smb w/o ping)
 
 **sleeptimer.cna** - automatically sets sleep intervals based on time. (ie from 10p to 6a, sleep for 60s). Resets to 60s sleeps when the sleep interval ends.
 
