@@ -1,7 +1,6 @@
 #author: bluescreenofjeff
 
-# THIS SCRIPT BREAKS CREDENTIAL NOTES IN EDIT FIELD
-# to save credentials with this script active, you must use the context menu option "Set Note..."
+# Removed credentials will not repopulate a timestamp until the script has been reloaded
 
 #
 # PLEASE NOTE - THIS IS CONSIDERED A BETA SCRIPT
@@ -13,6 +12,7 @@
 # Note: Adds "no timestamp" to the source column of existing creds. Modifying the credential (except the Note) will trigger a new timestamp.
 
 
+global('@credential_dedupe');
 
 #function to add timestamp note to all credentials with blank notes
 sub timestampNote {
@@ -21,18 +21,24 @@ sub timestampNote {
 	if ($1 eq "initial") {
 		$onload = "True";
 	}
-	foreach $key => $value (credentials()){
+	foreach $key => $value (credentials()) {
 		$user = $value['user'];
 		$password = $value['password'];
 		$host = $value['host'];
 		$realm = $value['realm'];
 		$source = $value['source'];
 		$pwtimestamp = formatDate('MM/dd/yyyy HH:mm:ss (z)');
-		if (($onload eq "True") && (($source eq 'hashdump') || ($source eq 'mimikatz'))) {		
-			credential_add("$user","$password","$realm","$source - no timestamp","$host");
-		}
-		else if (($source eq 'hashdump') || ($source eq 'mimikatz')) {
-			credential_add("$user","$password","$realm","$source - $pwtimestamp","$host");
+		$cred_hash = "$user\t$password\t$host\t$realm";
+		if ($cred_hash !in @credential_dedupe) {
+			if (($source eq 'hashdump') || ($source eq 'mimikatz')) {
+				if ($onload eq "True") {
+					add(@credential_dedupe,$cred_hash);
+				}
+				else {
+					add(@credential_dedupe,$cred_hash);
+					credential_add("$user","$password","$realm","$source - $pwtimestamp","$host");	
+				}
+			}
 		}
 	}
 }
