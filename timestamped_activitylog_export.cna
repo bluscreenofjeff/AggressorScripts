@@ -1,9 +1,14 @@
 #author: bluescreenofjeff
 #load this script to output all event and activity logs with human-readable timestamp to activitylog.txt in your working directory
 
-foreach $key => $value (archives())
-{
-	$handle = openf(">>activitylog.txt");
-	println($handle, dstamp($value['when']) . " " . formatDate("z") . "\t" . $value['data'] . "\t" . $value['type']. "\t" . $value['bid']);
+#note: the file save prompt will pop up once for each server you are connected to
+
+prompt_file_save($null, {
+	local('$handle');
+	$handle = openf(">> $+ $1");
+	foreach $key => $value (archives())
+	{
+		println($handle, dstamp($value['when']) . " " . formatDate("z") . "\t" . $value['data'] . "\t" . $value['type']. "\t" . $value['bid']);
+	}
 	closef($handle);
-}
+});
