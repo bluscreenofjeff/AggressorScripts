@@ -27,5 +27,7 @@ To pull Empire Agents into Cobalt Strike, use the *Beaconpire -> Pull in Empire 
 
 *Note: If the Empire server doesn't have a foreign Empire listener for your selected Cobalt Strike server, it will create one.*
 
-Please see this post for more info and demo gifs:
-[https://bluescreenofjeff.com/2016-11-28-beaconpire-cobalt-strike-and-empire-interoperability-with-aggressor-script](2016-11-28-beaconpire-cobalt-strike-and-empire-interoperability-with-aggressor-script)
+## References
+
+For more info and demo GIFs, please see:
+[https://bluescreenofjeff.com/2016-11-29-beaconpire-cobalt-strike-and-empire-interoperability-with-aggressor-script](2016-11-29-beaconpire-cobalt-strike-and-empire-interoperability-with-aggressor-script)
