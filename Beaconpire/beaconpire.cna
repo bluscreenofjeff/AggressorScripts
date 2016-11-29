@@ -194,10 +194,10 @@ sub configureListeners {
     
     # main title and dimensions of the dialog box
     if ($select_bool eq "True"){
-		$listener_dialog = dialog("Select Listener", 590, 280);
+		$listener_dialog = dialog("Select an Empire Listener", 590, 280);
     }
     else {
-    	$listener_dialog = dialog("Configure Listeners", 590, 280);
+    	$listener_dialog = dialog("Configure Empire Listeners", 590, 280);
     }
     
 
@@ -386,7 +386,7 @@ sub addListener {
     local('$name_temp $description_temp $required_temp $value_temp $current_key $delta $error_mesg');
     
     # main title and dimensions of the dialog box
-    $addlistener_dialog = dialog("Add a Listener", 700, 400);
+    $addlistener_dialog = dialog("Add an Empire Listener", 700, 400);
 
 
     # build out the option list table
@@ -877,18 +877,13 @@ sub beaconsMenu {
 
 	#selectallButton listener
     [$selectallButton addActionListener: lambda({
-    	if (size(@selected_beacons) < 1){
-			show_message("No Beacons present");
+		$select_bool = "True";
+		clear(%empireserverAttributes["targetbeacons"]);
+		foreach $beacon (beacons()) {
+			add(%empireserverAttributes["targetbeacons"],$beacon['id']);
 		}
-		else {
-			$select_bool = "True";
-			clear(%empireserverAttributes["targetbeacons"]);
-			foreach $beacon (beacons()) {
-				add(%empireserverAttributes["targetbeacons"],$beacon['id']);
-			}
-			configureListeners(%empireserverAttributes["targetbeacons"]);
-			[$becaonsmenu_dialog setVisible: 0]; # close the dialog off
-		}
+		configureListeners(%empireserverAttributes["targetbeacons"]);
+		[$becaonsmenu_dialog setVisible: 0]; # close the dialog off
 		})];
 
     #refreshButton listener
