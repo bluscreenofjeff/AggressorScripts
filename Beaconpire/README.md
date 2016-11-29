@@ -30,4 +30,4 @@ To pull Empire Agents into Cobalt Strike, use the *Beaconpire -> Pull in Empire 
 ## References
 
 For more info and demo GIFs, please see:
-[https://bluescreenofjeff.com/2016-11-29-beaconpire-cobalt-strike-and-empire-interoperability-with-aggressor-script](2016-11-29-beaconpire-cobalt-strike-and-empire-interoperability-with-aggressor-script)
+[https://bluescreenofjeff.com/2016-11-29-beaconpire-cobalt-strike-and-empire-interoperability-with-aggressor-script](https://bluescreenofjeff.com/2016-11-29-beaconpire-cobalt-strike-and-empire-interoperability-with-aggressor-script)
