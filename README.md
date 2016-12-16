@@ -5,6 +5,8 @@ Aggressor scripts for use with [Cobalt Strike](https://cobaltstrike.com) 3.0+
 
 **beaconid_note.cna** - set Beacon note to its ID on load and initial checkin (primarily useful when coding Aggressor scripts)
 
+**beaconestablishednote.cna** - set Beacon note to the time it was established on initial checkin
+
 **Beaconpire** - send Beacons to Empire and pull Empire Agents into Cobalt Strike
 
 **CCDC** - a collection of scripts designed for use at CCDC
