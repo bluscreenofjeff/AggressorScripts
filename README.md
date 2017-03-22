@@ -17,6 +17,8 @@ Aggressor scripts for use with [Cobalt Strike](https://cobaltstrike.com) 3.0+
 
 **forcecheckin.cna** - forces an SMB Beacon to checkin after a specified frequency
 
+**mass-dcsync.cna** - DCSync a line-separated list of users from a DC
+
 **mimikatz-every-30m.cna** - runs mimikatz's "logonpasswords" alias every thirty minutes
 
 **mimikatz-timestamp-note-BETA.cna** - POC script that adds a timestamp to the source column in new credentials. The script is considered BETA - it has not been field tested and has bugs.
