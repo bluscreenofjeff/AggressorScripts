@@ -11,8 +11,6 @@ sub mass-dcsync {
 		$handle = openf($3['userlist']);
 		@userlistdata = readAll($handle);
 		closef($handle);
-		println(@userlistdata);
-		println(@bids);
 		foreach $bid (@bids){
 			foreach $user (@userlistdata){
 				bdcsync($bid, $3['$fqdn'], $3['domain'] . $+ . '\\' . $+ . $user);
