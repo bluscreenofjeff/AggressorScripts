@@ -30,7 +30,7 @@ sub timestampNote {
 		$pwtimestamp = formatDate('MM/dd/yyyy HH:mm:ss (z)');
 		$cred_hash = "$user\t$password\t$host\t$realm";
 		if ($cred_hash !in @credential_dedupe) {
-			if (($source eq 'hashdump') || ($source eq 'mimikatz')) {
+			if (($source eq 'hashdump') || ($source eq 'mimikatz') || ($source eq 'wdigest')) {
 				if ($onload eq "True") {
 					add(@credential_dedupe,$cred_hash);
 				}
