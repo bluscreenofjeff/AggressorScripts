@@ -1,0 +1,127 @@
+# author: bluescreenofjeff
+
+#Script to send event log events to Slack
+#See my blog post at https://bluescreenofjeff.com/2017-04-11-slack-bots-for-trolls-and-work/ for more
+
+# NOTE - This script will likely require modification before deployment on a production test.
+# Potentially sensitive information will be transmitted to Slack, such as usernames, target IPs, target hostnames, and teamserver info
+# Be sure to review the code before production use!
+
+#%slack_options["webhookURL"] = 'https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCCCCCCCCCC';
+%slack_options["channel"] = '#cobaltstrike';
+%slack_options["emoji"] = ':robot_face:';
+%slack_options["teamserver"] = localip();
+
+#set this value to 'true' (MUST BE LOWERCASE) if you are going to use agscript to leave this running even when all users disconnect
+%slack_options["enabled"] = 'false';
+
+
+
+#settings dialog
+
+sub settings {
+
+	$dialog = dialog("Event Log to Slack Settings", %(webhookURL => %slack_options["webhookURL"], channel => %slack_options["channel"], emoji => %slack_options["emoji"], teamserver => %slack_options["teamserver"], enabled => %slack_options["enabled"]), lambda({
+		%slack_options["webhookURL"] = $3['webhookURL'];
+		%slack_options["channel"] = $3['channel'];
+		%slack_options["emoji"] = $3['emoji'];
+		%slack_options["enabled"] = $3['enabled'];
+		%slack_options["teamserver"] = $3['teamserver'];
+		if (%slack_options["enabled"] eq 'true') {
+			#initialize script with message to event log
+			elog("Event Log to Slack enabled on teamserver.");
+		}		
+	}));
+
+	dialog_description($dialog, "Set up Cobalt Strike to send all messages in the Event Log to Slack via an incoming webhook.");
+	
+	drow_text($dialog, "webhookURL",  "Slack Webhook URL:");
+	drow_text($dialog, "channel", "Slack Channel:");
+	drow_text($dialog, "emoji", "Bot Emoji:");
+	drow_text($dialog, "teamserver", "Teamserver Identifier:");
+	drow_checkbox($dialog, "enabled", "Enabled:");
+	
+	dbutton_action($dialog, "Save");
+	
+	dialog_show($dialog);
+
+}
+
+#send the message to Slack
+sub sendMessage {
+	# $1 = timestamp of message, $2 = message
+	$timestamp = formatDate($1,"MM/dd/yyyy - HH:mm:ss z");
+	@curl_command = @('curl','-X','POST','--data-urlencode','payload={"username": "Cobalt Strike Bot", "icon_emoji": "' . %slack_options["emoji"] . '", "channel": "' . %slack_options["channel"] . '", "attachments" : [{ "pretext":"Server: ' . %slack_options["teamserver"] . ' Timestamp: ' . $timestamp . '" , "text" : "' . $2 . '"}]}',%slack_options["webhookURL"]);
+	$output = readAll(exec(@curl_command));	
+
+	#some error handling
+	if ($output ne '@(\'ok\')') {
+		show_message("Event Log to Slack encountered the following error:\n " . $output);
+	}
+	
+	closef($output);
+}
+
+#event triggers
+on event_action {
+	if (%slack_options["enabled"] eq 'true') {
+		sendMessage($3,"$1 - $2");
+	}
+}
+
+on event_beacon_initial {
+	if (%slack_options["enabled"] eq 'true') {
+		sendMessage($2,"initial Beacon from $1");
+	}
+}
+
+on event_join {
+	if (%slack_options["enabled"] eq 'true') {
+		sendMessage($2,"$1 joined the server");
+	}
+}
+
+on event_newsite {
+	if (%slack_options["enabled"] eq 'true') {
+		sendMessage($3,"$1 $2");
+	}
+}
+
+on event_notify {
+	if (%slack_options["enabled"] eq 'true') {
+		sendMessage($2,$1);
+	}
+}
+
+on event_nouser {
+	if (%slack_options["enabled"] eq 'true') {
+		sendMessage($2,"$1 timed out");
+	}
+}
+
+on event_public {
+	if (%slack_options["enabled"] eq 'true') {
+		sendMessage($3,"$1 - $2");
+	}
+}
+
+on event_quit {
+	if (%slack_options["enabled"] eq 'true') {
+		sendMessage($2,"$1 logged out of the server");
+	}
+}
+
+if (%slack_options["enabled"] eq 'true') {
+	#initialize script with message to event log
+	elog("Event Log to Slack enabled on teamserver.");
+}
+
+#menubar options
+menubar("Event Log to Slack", "eventlog-to-slack", 2);
+
+# modify the main "Attacks" menu
+popup eventlog-to-slack {
+    item "Settings" {
+        settings();
+    }
+}

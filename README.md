@@ -15,6 +15,8 @@ Aggressor scripts for use with [Cobalt Strike](https://cobaltstrike.com) 3.0+
 
 **checkin_jobs_context.cna** - adds context menu options to run "checkin" or "jobs" on Beacon session to help detect stale beacons in bulk
 
+**eventlog-to-slack.cna** - script to send event log events to Slack. NOTE: Review code before deploying in production. Sensitive information (usernames, hostnames, teamserver IPs) will be sent to Slack.
+
 **forcecheckin.cna** - forces an SMB Beacon to checkin after a specified frequency
 
 **mass-dcsync.cna** - DCSync a line-separated list of users from a DC
