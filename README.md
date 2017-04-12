@@ -29,7 +29,7 @@ Aggressor scripts for use with [Cobalt Strike](https://cobaltstrike.com) 3.0+
 
 **ping_aliases.cna** - creates an alias for quick ping (one ping packet w/ shell) and smbscan (to portscan smb w/o ping)
 
-**silver-tickets.cna** - monitors Beacon output for machine hashes and stores them in the cred store. Also adds a dialog box for generating a [Silver Ticket](https://adsecurity.org/?p=2753) from the gathered machine hashes
+**silver-tickets.cna** - monitors Beacon output for machine hashes and stores them in the cred store. Also adds a dialog box for generating a [Silver Ticket](https://adsecurity.org/?p=2753) from a gathered machine hash
 
 **sleeptimer.cna** - automatically sets sleep intervals based on time. (ie from 10p to 6a, sleep for 60s). Resets to 60s sleeps when the sleep interval ends.
 

@@ -57,7 +57,7 @@ sub silver-ticket {
 	dialog_description($dialog, "This dialog generates a silver ticket for the chosen service and injects it into the current session.");
 	
 	drow_text($dialog, "user",  "User:");
-	drow_text($dialog, "domain", "Domain:");
+	drow_text($dialog, "domain", "Domain FQDN:");
 	drow_text($dialog, "domain-sid", "Domain SID:");
 	drow_combobox($dialog, "target", "Target Host:", keys(%machinescompromised));
 	drow_text($dialog, "service", "Service:");
