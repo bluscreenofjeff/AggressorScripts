@@ -31,9 +31,7 @@ sub mass-dcsync {
 }
 
 popup beacon_bottom {
-	menu "Persist" {
-		item "Mass DCSync" {
-			mass-dcsync($1);
-		}
+	item "Mass DCSync" {
+		mass-dcsync($1);
 	}
 }   
