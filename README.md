@@ -12,6 +12,7 @@ Aggressor scripts for use with [Cobalt Strike](https://cobaltstrike.com) 3.0+
 **CCDC** - a collection of scripts designed for use at CCDC
 * **lulz.cna** - includes some Blue Team annoyance functions: IE Popup (kiosk mode), Windows Alert (7+), Host Shutdown, Boo.exe (uploads/executes Boo), and Clippy popup (requires setup and Windows 7).
 * **misc.cna** - includes functions to stomp the host file with a chosen text file or add an entry to the existing host file.
+* **sysinternals-killer.cna** - Automatically kill common Blue Team processes, such as the Sysinternals tools, on launch
 
 **checkin_jobs_context.cna** - adds context menu options to run "checkin" or "jobs" on Beacon session to help detect stale beacons in bulk
 
