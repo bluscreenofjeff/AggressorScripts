@@ -610,6 +610,7 @@ sub checkError {
 			$error_mesg = $error_mesg . $error_line . "\n";
 		}
 		show_error("An error occurred:\n" . $error_mesg);
+        $error_mesg = '';
 	}
 }
 
