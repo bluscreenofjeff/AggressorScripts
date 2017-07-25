@@ -1,0 +1,28 @@
+# author: bluescreenofjeff
+
+#Script to write weblog entries to an Apache-like format
+#See my blog post at URL for this script's usage with rsyslog
+#<URL-TBD>
+
+#modify this path as needed. Defaults to Cobalt Strike's directory
+$weblogpath = 'weblog.log';
+
+on web_hit {
+	local('$handle');
+
+	if (size($8) gt 0) {
+		@params = @();
+		foreach $key => $value ($8) {
+			add(@params,"$key $+ = $+ value");
+		}
+		$paramstring = "\?" . join('&', @params);
+		$logentry = "$3 - - [" . formatDate($9,'dd/MMM/yyyy:kk:mm:ss Z') . "] \"$1 $2 $+ $paramstring -\" " . substr($5,0,3) . " $6 \"-\" \"$4\"";
+	}
+	else {
+		$logentry = "$3 - - [" . formatDate($9,'dd/MMM/yyyy:kk:mm:ss Z') . "] \"$1 $2 -\" " . substr($5,0,3) . " $6 \"-\" \"$4\"";
+	}
+
+	$handle = openf(">> $+ $weblogpath");
+	println($handle,$logentry);
+	closef($handle);
+}
