@@ -2,7 +2,7 @@
 
 #Script to write weblog entries to an Apache-like format
 #See my blog post at URL for this script's usage with rsyslog
-#<URL-TBD>
+#https://bluescreenofjeff.com/2017-08-08-attack-infrastructure-log-aggregation-and-monitoring/
 
 #modify this path as needed. Defaults to Cobalt Strike's directory
 $weblogpath = 'weblog.log';
