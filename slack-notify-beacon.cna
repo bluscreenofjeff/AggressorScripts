@@ -1,0 +1,15 @@
+#author: bluescreenofjeff
+
+#set this info:
+#Include the '#' and ':' in the corresponding scalars
+$slack_channel = "#SLACK_CHANNEL_GOES_HERE";
+$slack_emoji = ':skeleton:';
+$slack_webhookURL = 'https://hooks.slack.com/services/TXXXXXXXX/YYYYYYYYY/ZZZZZZZZZZZZZZZZZZZZZZZZ';
+
+$teamserver_hostname = 'HOSTNAME-GOES-HERE';
+
+
+on beacon_initial {
+		@curl_command = @('curl','-X','POST','--data-urlencode','payload={"username": "Cobalt Strike Notifier Bot", "icon_emoji": "' . $slack_emoji. '", "channel": "' . $slack_channel . '", "text":"New Beacon on ' . $teamserver_hostname . '. Commence the jigglin!"}',$slack_webhookURL);
+		exec(@curl_command);
+}

@@ -1,0 +1,21 @@
+#author: bluescreenofjeff
+
+#set this info:
+#Include the '#' and ':' in the corresponding scalars
+$slack_channel = "#SLACK_CHANNEL_GOES_HERE";
+$slack_emoji = ':skeleton:';
+$slack_webhookURL = 'https://hooks.slack.com/services/TXXXXXXXX/YYYYYYYYY/ZZZZZZZZZZZZZZZZZZZZZZZZ';
+
+$teamserver_hostname = 'HOSTNAME-GOES-HERE';
+
+#URIs to notify on
+#(ignores the query string)
+
+$target-uris = @('/1by1pixel.jpg', '/heres/my/payload');
+
+on web_hit {
+	if ($2 in $target-uris) {
+		@curl_command = @('curl','-X','POST','--data-urlencode','payload={"username": "Cobalt Strike Notifier Bot", "icon_emoji": "' . $slack_emoji. '", "channel": "' . $slack_channel . '", "text":"New webhit on ' . $teamserver_hostname . ' to URI: ' . $2 . '"}',$slack_webhookURL);
+		exec(@curl_command);
+	}
+}
