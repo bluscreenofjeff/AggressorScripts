@@ -41,3 +41,12 @@ Aggressor scripts for use with [Cobalt Strike](https://cobaltstrike.com) 3.0+
 **sleeptimer.cna** - automatically sets sleep intervals based on time (i.e. from 10p to 6a, sleep for 60s). Resets to 60s sleeps when the sleep interval ends.
 
 **timestamped_activitylog_export.cna** - Outputs all event and activity logs with human-readable timestamp to activitylog.txt in your working directory (runs on script load)
+
+# Other Aggressor Repos
+
+* [https://github.com/Und3rf10w/Aggressor-scripts](https://github.com/Und3rf10w/Aggressor-scripts)
+* [https://github.com/001SPARTaN/aggressor_scripts](https://github.com/001SPARTaN/aggressor_scripts)
+* [https://github.com/vysec/Aggressor-VYSEC](https://github.com/vysec/Aggressor-VYSEC)
+* [https://github.com/harleyQu1nn/AggressorScripts](https://github.com/harleyQu1nn/AggressorScripts)
+* [https://github.com/rasta-mouse/Aggressor-Script](https://github.com/rasta-mouse/Aggressor-Script)
+* [https://github.com/ramen0x3f/AggressorScripts](https://github.com/ramen0x3f/AggressorScripts)
