@@ -1,0 +1,14 @@
+#author bluescreenofjeff
+
+#alias for "pspane" to open the process browser pane for the current Beacon
+
+#register help
+beacon_command_register("pspane", "open process browser pane",
+	"Synopsis: pspane \n\n" .
+	"Open the process browser pane for the current Beacon.");
+
+#setting the alias
+alias pspane {
+	binput($1,"ps");
+	openProcessBrowser($1);
+}

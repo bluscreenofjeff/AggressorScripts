@@ -32,13 +32,19 @@ Aggressor scripts for use with [Cobalt Strike](https://cobaltstrike.com) 3.0+
 
 **ping_aliases.cna** - creates an alias for quick ping (one ping packet w/ shell) and smbscan (to portscan smb w/o ping)
 
+**ps-window-alias.cna** - creates an alias to open the process browser pane for the current Beacon
+
 **silver-tickets.cna** - monitors Beacon output for machine hashes and stores them in the cred store. Also adds a dialog box for generating a [Silver Ticket](https://adsecurity.org/?p=2753) from a gathered machine hash
 
 **slack-notify-beacon.cna** - sends a generic alert to a chosen Slack channel via incoming webhook when a new Beacon is established(requires curl on team server)
 
 **slack-notify-webhit.cna** - sends a generic alert to a chosen Slack channel via incoming webhook when a specific URI or URIs are requested (requires curl on team server)
 
+**sleep-down-when-no-operators.cna** - increases the sleep interval on all Beacons when there are no operators logged in
+
 **sleeptimer.cna** - automatically sets sleep intervals based on time (i.e. from 10p to 6a, sleep for 60s). Resets to 60s sleeps when the sleep interval ends.
+
+**stale-beacon-notifier.cna** - sends a generic alert to a chosen Slack channel via incoming webhook when a Beacon's last checkin exceeds a specified time (requires curl on team server).
 
 **timestamped_activitylog_export.cna** - Outputs all event and activity logs with human-readable timestamp to activitylog.txt in your working directory (runs on script load)
 

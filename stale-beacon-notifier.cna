@@ -1,0 +1,28 @@
+#author: bluescreenofjeff
+
+#set this info:
+#Include the '#' and ':' in the corresponding scalars
+#$slack_channel = "#SLACK_CHANNEL_GOES_HERE";
+#$slack_emoji = ':robot:';
+#$slack_webhookURL = 'https://hooks.slack.com/services/TXXXXXXXX/YYYYYYYYY/ZZZZZZZZZZZZZZZZZZZZZZZZ';
+
+$teamserver_hostname = 'SERVER-NAME-GOES-HERE';
+
+# default stale value of 5 minutes (300000ms)
+$stale_value = 300000;
+
+#modify line 16 as needed with the heartbeat events (https://www.cobaltstrike.com/aggressor-script/events.html#heartbeat_10m)
+
+on heartbeat_30m {
+	foreach $beacon (beacons()) {
+		if ($beacon["last"] > $stale_value) {
+			$last_checkin = $beacon["last"] / 1000;
+			@curl_command = @('curl','-X','POST','--data-urlencode','payload={"username": "Cobalt Strike Notifier Bot", "icon_emoji": "' . $slack_emoji. '", "channel": "' . $slack_channel . '", "text":"There is a stale beacon on ' . $teamserver_hostname . ' that hasn\'t checked in for ' . $last_checkin . ' seconds. "}',$slack_webhookURL);
+			exec(@curl_command);	
+		}
+	}
+}1
+
+#onload message
+@curl_command = @('curl','-X','POST','--data-urlencode','payload={"username": "Cobalt Strike Notifier Bot", "icon_emoji": "' . $slack_emoji. '", "channel": "' . $slack_channel . '", "text":"Server ' . $teamserver_hostname . ' will alert on Beacons that haven\'t checked in for ' . $stale_value . ' seconds. "}',$slack_webhookURL);
+exec(@curl_command);

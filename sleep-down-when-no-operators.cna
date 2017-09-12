@@ -1,0 +1,20 @@
+#author: bluescreenofjeff
+
+# increases the sleep interval on all Beacons when there are no operators logged in
+
+#value to set all Beacons' sleep interval and jitter to when operators log off (specified in seconds)
+$sleep_value = 300;
+$jitter_value = 20;
+
+
+on event_quit {
+	#NOTE: You will need to modify the below number higher if you use agscript to log in and run scripts.
+	if (size(users()) <= 2) {
+		foreach $beacon (beacons()) {
+			#ignore SMB Beacons
+			if ($beacon["pbid"] eq '') {
+				bsleep($beacon["id"], $sleep_value, $jitter_value);
+			}
+		}
+	}
+}
