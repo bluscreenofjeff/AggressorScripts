@@ -1,0 +1,78 @@
+#
+# Loads all scripts. Feel free to comment out ones you wont use
+#
+
+# apache-style-weblog-output.cna - outputs weblog hits to an Apache-like access log file named weblog.log in Cobalt Strike's working directory
+include(script_resource("apache-style-weblog-output.cna"));
+
+# beacon_to_empire.cna - a script that leverages Powershell Empire's RESTful API to migrate sessions from a Beacon session on Cobalt Strike
+include(script_resource("beacon_to_empire.cna"));
+
+# beaconid_note.cna - set Beacon note to its ID on load and initial checkin (primarily useful when coding Aggressor scripts)
+include(script_resource("beaconid_note.cna"));
+
+# beaconestablishednote.cna - set Beacon note to the time it was established on initial checkin
+include(script_resource("beaconestablishednote.cna"));
+
+# Beaconpire - send Beacons to Empire and pull Empire Agents into Cobalt Strike
+include(script_resource("Beaconpire/beaconpire.cna"));
+
+# CCDC - a collection of scripts designed for use at CCDC
+
+#     lulz.cna - includes some Blue Team annoyance functions: IE Popup (kiosk mode), Windows Alert (7+), Host Shutdown, Boo.exe (uploads/executes Boo), and Clippy popup (requires setup and Windows 7).
+#     misc.cna - includes functions to stomp the host file with a chosen text file or add an entry to the existing host file.
+#     sysinternals-killer.cna - Automatically kill common Blue Team processes, such as the Sysinternals tools, on launch
+#include(script_resource("CCDC/lulz.cna"));
+#include(script_resource("CCDC/misc.cna"));
+#include(script_resource("CCDC/sysinternals-killer.cna"));
+
+# checkin_jobs_context.cna - adds context menu options to run "checkin" or "jobs" on Beacon session to help detect stale beacons in bulk
+include(script_resource("checkin_jobs_context.cna"));
+
+# eventlog-to-slack.cna - script to send event log events to Slack. NOTE: Review code before deploying in production. Sensitive information (usernames, hostnames, teamserver IPs) will be sent to Slack.
+include(script_resource("eventlog-to-slack.cna"));
+
+# forcecheckin.cna - forces an SMB Beacon to checkin after a specified frequency
+include(script_resource("forcecheckin.cna"));
+
+# mass-dcsync.cna - DCSync a line-separated list of users from a DC
+include(script_resource("mass-dcsync.cna"));
+
+# mimikatz-every-30m.cna - runs mimikatz's "logonpasswords" alias every thirty minutes
+include(script_resource("mimikatz-every-30m.cna"));
+
+# mimikatz-timestamp-note-BETA.cna - POC script that adds a timestamp to the source column in new credentials. The script is considered BETA - it has not been field tested and has bugs.
+#include(script_resource("mimikatz-timestamp-note-BETA.cna"));
+
+# powershell.cna - adds context items for some common Powerup and Powerview functions. For this to work, you must put the PowerUp.ps1 and powerview.ps1 files in the same directory as this script
+include(script_resource("powershell.cna"));
+
+# ping_aliases.cna - creates an alias for quick ping (one ping packet w/ shell) and smbscan (to portscan smb w/o ping)
+include(script_resource("ping_aliases.cna"));
+
+# ps-window-alias.cna - creates an alias to open the process browser pane for the current Beacon
+include(script_resource("ps-window-alias.cna"));
+
+# silver-tickets.cna - monitors Beacon output for machine hashes and stores them in the cred store. Also adds a dialog box for generating a Silver Ticket from a gathered machine hash
+include(script_resource("silver-tickets.cna"));
+
+# slack-notify-beacon.cna - sends a generic alert to a chosen Slack channel via incoming webhook when a new Beacon is established(requires curl on team server)
+include(script_resource("slack-notify-beacon.cna"));
+
+# slack-notify-webhit.cna - sends a generic alert to a chosen Slack channel via incoming webhook when a specific URI or URIs are requested (requires curl on team server)
+include(script_resource("slack-notify-webhit.cna"));
+
+# sleep-down-when-no-operators.cna - increases the sleep interval on all Beacons when there are no operators logged in
+include(script_resource("sleep-down-when-no-operators.cna"));
+
+# sleeptimer.cna - automatically sets sleep intervals based on time (i.e. from 10p to 6a, sleep for 60s). Resets to 60s sleeps when the sleep interval ends.
+include(script_resource("sleeptimer.cna"));
+
+# stale-beacon-notifier.cna - sends a generic alert to a chosen Slack channel via incoming webhook when a Beacon's last checkin exceeds a specified time (requires curl on team server).
+include(script_resource("tale-beacon-notifier.cna"));
+
+# timestamped_activitylog_export.cna - Outputs all event and activity logs with human-readable timestamp to activitylog.txt in your working directory (runs on script load)
+include(script_resource("timestamped_activitylog_export.cna"));
+
+
+
