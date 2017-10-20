@@ -1,6 +1,8 @@
 # AggressorScripts
 Aggressor scripts for use with [Cobalt Strike](https://cobaltstrike.com) 3.0+
 
+Scripts can be loaded in bulk by configuring loader.cna
+
 **apache-style-weblog-output.cna** - outputs weblog hits to an Apache-like access log file named weblog.log in Cobalt Strike's working directory 
 
 **beacon_to_empire.cna** - a script that leverages [Powershell Empire's](http://www.powershellempire.com/) RESTful API to migrate sessions from a Beacon session on Cobalt Strike
