@@ -59,6 +59,6 @@ Aggressor scripts for use with [Cobalt Strike](https://cobaltstrike.com) 3.0+
 * [https://github.com/invokethreatguy/aggressor_scripts_collection](https://github.com/invokethreatguy/aggressor_scripts_collection)
 
 # Submissions
-Please feel free to submit a Pull Request with fixes or improvements to any of the existing scripts; however, I intend to keep only Aggressor scrits that I've written in this repo.
+Please feel free to submit a Pull Request with fixes or improvements to any of the existing scripts; however, my intention is to only keep Aggressor scripts that I've written in this repo.
 
 If you have an idea for a script and would like to submit it somewhere, consider adding it to Lee Kagan's [Aggressor Scripts Collection](https://github.com/invokethreatguy/aggressor_scripts_collection) repo.
