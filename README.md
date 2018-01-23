@@ -28,6 +28,8 @@ Aggressor scripts for use with [Cobalt Strike](https://cobaltstrike.com) 3.0+
 
 **mimikatz-timestamp-note-BETA.cna** - POC script that adds a timestamp to the source column in new credentials. The script is considered BETA - it has not been field tested and has bugs.
 
+**OPSEC Profiles** - limits the commands Cobalt Strike can execute while loaded. Used to reduce the chance of performing high-risk actions in mature target environments.
+
 **powershell.cna** - adds context items for some common Powerup and Powerview functions. For this to work, you must put the PowerUp.ps1 and powerview.ps1 files in the same directory as this script
 
 **ping_aliases.cna** - creates an alias for quick ping (one ping packet w/ shell) and smbscan (to portscan smb w/o ping)

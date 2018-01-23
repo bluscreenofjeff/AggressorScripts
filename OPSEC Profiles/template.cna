@@ -1,0 +1,575 @@
+# authors: bluscreenofjeff and _tifkin
+
+#commands hashtable will store settings for each Beacon command. Options: enable and block.
+
+%commands["browserpivot"] = "enable";
+%commands["bypassuac"] = "enable";
+%commands["cancel"] = "enable";
+%commands["cd"] = "enable";
+%commands["checkin"] = "enable";
+%commands["clear"] = "enable";
+%commands["covertvpn"] = "enable";
+%commands["cp"] = "enable";
+%commands["dcsync"] = "enable";
+%commands["desktop"] = "enable";
+%commands["dllinject"] = "enable";
+%commands["download"] = "enable";
+%commands["downloads"] = "enable";
+%commands["drives"] = "enable";
+%commands["elevate"] = "enable";
+%commands["execute"] = "enable";
+%commands["exit"] = "enable";
+%commands["getsystem"] = "enable";
+%commands["getuid"] = "enable";
+%commands["hashdump"] = "enable";
+%commands["help"] = "enable";
+%commands["inject"] = "enable";
+%commands["jobkill"] = "enable";
+%commands["jobs"] = "enable";
+%commands["kerberos_ccache_use"] = "enable";
+%commands["kerberos_ticket_purge"] = "enable";
+%commands["kerberos_ticket_use"] = "enable";
+%commands["keylogger"] = "enable";
+%commands["kill"] = "enable";
+%commands["link"] = "enable";
+%commands["logonpasswords"] = "enable";
+%commands["ls"] = "enable";
+%commands["make_token"] = "enable";
+%commands["mimikatz"] = "enable";
+%commands["mkdir"] = "enable";
+%commands["mode dns"] = "enable";
+%commands["mode dns-txt"] = "enable";
+%commands["mode dns6"] = "enable";
+%commands["mode http"] = "enable";
+%commands["mode smb"] = "enable";
+%commands["mv"] = "enable";
+%commands["net"] = "enable";
+%commands["note"] = "enable";
+%commands["portscan"] = "enable";
+%commands["powerpick"] = "enable";
+%commands["powershell"] = "enable";
+%commands["powershell-import"] = "enable";
+%commands["ppid"] = "enable";
+%commands["ps"] = "enable";
+%commands["psexec"] = "enable";
+%commands["psexec_psh"] = "enable";
+%commands["psinject"] = "enable";
+%commands["pspane"] = "enable";
+%commands["pth"] = "enable";
+%commands["pwd"] = "enable";
+%commands["rev2self"] = "enable";
+%commands["rm"] = "enable";
+%commands["rportfwd"] = "enable";
+%commands["runas"] = "enable";
+%commands["runu"] = "enable";
+%commands["screenshot"] = "enable";
+%commands["shell"] = "enable";
+%commands["shinject"] = "enable";
+%commands["shspawn"] = "enable";
+%commands["sleep"] = "enable";
+%commands["socks"] = "enable";
+%commands["spawn"] = "enable";
+%commands["spawnas"] = "enable";
+%commands["spawnto"] = "enable";
+%commands["spawnu"] = "enable";
+%commands["ssh"] = "enable";
+%commands["ssh-key"] = "enable";
+%commands["steal_token"] = "enable";
+%commands["timestomp"] = "enable";
+%commands["unlink"] = "enable";
+%commands["upload"] = "enable";
+%commands["wdigest"] = "enable";
+%commands["winrm"] = "enable";
+%commands["wmi"] = "enable";
+
+#configuring the block commands
+foreach $key (sorta(keys(%commands))) {
+	if (%commands[$key] eq "block") {
+		alias($key, {
+			berror($1,"This command's execution has been blocked. Remove the opsec profile to run the command.");
+		});
+	}
+}
+
+#Adding the opsec command to check the current settings
+beacon_command_register("opsec", "Show the settings of the loaded opsec profile",
+	"Synopsis: opsec\n\n" .
+	"Displays a list of command settings for the currently loaded opsec profile.");
+
+alias("opsec",{
+	blog($1,"The current opsec profile has the following commands set to enable/block: ");
+	foreach $key (sorta(keys(%commands))) {
+		blog2($1,$key . " - " . %commands[$key]);	
+	}
+});
+
+sub operror {
+	openOrActivate($1);
+	berror($1,"This command's execution has been blocked. Remove the opsec profile to run the command.");
+}
+
+#clear the beacon popup (context) menu
+popup_clear("beacon");
+
+#rebuild the beacon popup (context) menu with checks for "blocked" commands
+popup beacon {
+	item "&Interact" {
+		local('$bid');
+		foreach $bid ($1) {
+			openOrActivate($bid);
+		}
+	};
+
+	separator();
+
+	insert_menu("beacon_top", $1);
+
+	menu "&Access" {
+		item "&Dump Hashes" { 
+			if (%commands['hashdump'] eq 'block') {	
+				operror($1);			
+			}
+			else {
+				openOrActivate($1);
+				binput($1, "hashdump");
+				bhashdump($1); 
+			}
+		}
+		item "&Elevate" { 
+			if (%commands['elevate'] eq 'block') {	
+				operror($1);			
+			}
+			else {
+				openElevateDialog($1); 
+			}
+		}
+
+		item "Golden &Ticket" {
+			if (%commands['mimikatz'] eq 'block') {	
+				operror($1);			
+			}
+			else { 			
+				local('$bid');
+				foreach $bid ($1) {
+					openGoldenTicketDialog($bid);
+				}
+			}
+		}
+		item "Make T&oken" {
+			if (%commands['make_token'] eq 'block') {	
+				operror($1);			
+			}
+			else { 	
+				local('$bid');
+				foreach $bid ($1) {
+					openMakeTokenDialog($bid);
+				}
+			}
+		}		
+		item "&Run Mimikatz" {		
+			if ((%commands['mimikatz'] eq 'block') || (%commands['logonpasswords'] eq 'block') || (%commands['wdigest'] eq 'block')) {
+				operror($1);
+			}
+			else {
+				blogonpasswords($1);
+			}
+		}
+		item "&Spawn As"  { 
+			if (%commands['spawnas'] eq 'block') {	
+				operror($1);			
+			}
+			else { 
+				local('$bid');
+				foreach $bid ($1) {
+					openSpawnAsDialog($bid);
+				}
+			}
+		}
+	}
+	menu "&Explore" {
+		item "&Browser Pivot" {
+			if (%commands['browserpivot'] eq 'block') {	
+				operror($1);			
+			}
+			else { 
+				local('$bid');
+				foreach $bid ($1) {
+					openBrowserPivotSetup($bid);
+				}
+			}
+		}
+		item "&Desktop (VNC)" {
+			if (%commands['desktop'] eq 'block') {	
+				operror($1);			
+			}
+			else {  
+				binput($1, "desktop");
+				bdesktop($1); 
+			}
+		}
+		item "&File Browser" {
+			#since file browsing usually involves cd and ls, disabling when either is blocked
+			if ((%commands['cd'] eq 'block') || (%commands['ls'] eq 'block')) {	
+				operror($1);			
+			}
+			else {   
+				local('$bid');
+				foreach $bid ($1) {
+					openFileBrowser($bid);
+				}
+			}
+		}
+		item "&Net View" {
+			if (%commands['net'] eq 'block') {	
+				operror($1);			
+			}
+			else {   
+				openOrActivate($1);
+				binput($1, "net view");
+				bnetview($1); 
+			}
+		}
+		item "Port &Scan" {
+			if (%commands['portscan'] eq 'block') {	
+				operror($1);			
+			}
+			else {   
+				local('$bid');
+				foreach $bid ($1) {
+					openPortScannerLocal($bid); 
+				}
+			}
+		}
+		item "&Process List" { 
+			if (%commands['ps'] eq 'block') {	
+				operror($1);			
+			}
+			else {  
+				openProcessBrowser($1); 
+			}
+		}
+		item "S&creenshot" {
+			if (%commands['screenshot'] eq 'block') {	
+				operror($1);			
+			}
+			else {  
+				binput($1, "screenshot");
+				bscreenshot($1); 
+			}
+		}
+	}
+	menu "&Pivoting" {
+		item "&SOCKS Server" {
+			if (%commands['socks'] eq 'block') {	
+				operror($1);			
+			}
+			else {  
+				local('$bid');
+				foreach $bid ($1) {
+					openSOCKSSetup($bid);
+				}
+			}
+		}
+
+		item "&Listener..." { 
+			local('$bid');
+			foreach $bid ($1) {
+				openPivotListenerSetup($bid);
+			}
+		}
+
+		separator();
+
+		item "&Deploy VPN" {
+			if (%commands['covertvpn'] eq 'block') {	
+				operror($1);			
+			}
+			else {  
+				local('$bid');
+				foreach $bid ($1) {
+					openCovertVPNSetup($bid);
+				}
+			}
+		}
+	}
+	item "&Spawn" {
+		if (%commands['spawn'] eq 'block') {	
+			operror($1);			
+		}
+		else {   
+			openPayloadHelper(lambda({
+				binput($bids, "spawn $1");
+				bspawn($bids, $1);
+			}, $bids => $1));
+		}
+	}
+
+	insert_menu("beacon_bottom", $1);
+
+	separator();
+
+	menu "S&ession" {
+		item "&Note..." {
+			if (%commands['note'] eq 'block') {	
+				operror($1);
+			}
+			else {
+				# resolve the note attached to the first highlighted beacon
+				local('$note');
+				$note = beacon_info($1[0], "note");
+
+				# prompt the user for a new note.
+				prompt_text("Set Beacon Note:", $note, lambda({
+					binput($bids, "note $1");
+					beacon_note($bids, $1);
+				}, $bids => $1));
+			}
+		}
+
+		item "&Remove" {
+			beacon_remove($1);
+		}
+
+		item "&Sleep" {
+			if (%commands['sleep'] eq 'block') {	
+				operror($1);			
+			}
+			else {   
+				prompt_text("How long should beacon sleep for (seconds jitter%)?", "60", lambda({
+					local('$time $jitter');
+					if ($1 ismatch "(\\d+) (\\d+)") {
+						($time, $jitter) = matched();
+						binput($bids, "sleep $1");
+						bsleep($bids, $time, $jitter);
+					}
+					else if ($1 ismatch "(\\d+)") {
+						($time) = matched();
+						binput($bids, "sleep $1");
+						bsleep($bids, $time);
+					}
+					else {
+						show_message("I did not understand $1");
+					}
+				}, $bids => $1));
+			}
+		}
+		item "&Exit" {
+			if (%commands['exit'] eq 'block') {	
+				operror($1);			
+			}
+			else {    
+				binput($1, "exit");
+				bexit($1);
+			}
+		}
+	}			
+}
+
+#clear the ssh popup (context) menu
+popup_clear("ssh");
+
+#rebuild the ssh popup (context) menu with checks for "blocked" commands
+popup ssh {
+	item "&Interact" {
+		local('$bid');
+		foreach $bid ($1) {
+			openOrActivate($bid);
+		}
+	}
+
+	menu "&Pivoting" {
+		item "&SOCKS Server" {
+			if (%commands['socks'] eq 'block') {	
+			operror($1);			
+			}
+			else {  			
+				local('$bid');
+				foreach $bid ($1) {
+					openSOCKSSetup($bid);
+				}
+			}
+		}
+
+		item "&Listener..." { 
+			local('$bid');
+			foreach $bid ($1) {
+				openPivotListenerSetup($bid);
+			}
+		}
+	}
+
+	menu "S&ession" {
+		item "&Note..." {
+			if (%commands['note'] eq 'block') {	
+				operror($1);
+			}
+			else {
+				# resolve the note attached to the first highlighted beacon
+				local('$note');
+				$note = beacon_info($1[0], "note");
+
+				# prompt the user for a new note.
+				prompt_text("Set Session Note:", $note, lambda({
+					binput($bids, "note $1");
+					beacon_note($bids, $1);
+				}, $bids => $1));
+			}
+		}
+
+		item "&Remove" {
+			beacon_remove($1);
+		}
+
+		item "&Exit" { 
+			binput($1, "exit");
+			bexit($1);
+		}
+	}
+}
+
+#clear the targets popup (context) menu
+popup_clear("targets");
+
+#rebuild the targets popup (context) menu with checks for "blocked" commands
+popup targets {
+	menu "&Login" {
+		item "psexec" {
+			if (%commands['psexec'] eq 'block') {	
+				operror($1);
+				show_message("This command's execution has been blocked. Remove the opsec profile to run the command.");
+			}
+			else {   
+				openJumpDialog("psexec", $1);
+			} 
+		}
+
+		item "psexec (psh)" {
+			if (%commands['psexec_psh'] eq 'block') {	
+				operror($1);
+				show_message("This command's execution has been blocked. Remove the opsec profile to run the command.");			
+			}
+			else {   
+				openJumpDialog("psexec_psh", $1);
+			} 
+		}
+		
+		item "ssh" {
+			if (%commands['ssh'] eq 'block') {	
+				operror($1);
+				show_message("This command's execution has been blocked. Remove the opsec profile to run the command.");			
+			}
+			else {    
+				openJumpDialog("ssh", $1);
+			} 
+		}
+		
+		item "ssh (key)" { 
+			if (%commands['ssh-key'] eq 'block') {	
+				operror($1);
+				show_message("This command's execution has been blocked. Remove the opsec profile to run the command.");			
+			}
+			else {   
+				openJumpDialog("ssh-key", $1);
+			} 
+		}
+		
+		item "winrm (psh)" {
+			if (%commands['winrm'] eq 'block') {	
+				operror($1);
+				show_message("This command's execution has been blocked. Remove the opsec profile to run the command.");			
+			}
+			else {    
+				openJumpDialog("winrm", $1); 
+			}
+		}
+		
+		item "wmi (psh)" {
+			if (%commands['wmi'] eq 'block') {	
+				operror($1);
+				show_message("This command's execution has been blocked. Remove the opsec profile to run the command.");			
+			}
+			else {    
+				openJumpDialog("wmi", $1); 
+			}
+		}
+	}
+
+	separator();
+
+	# find all sessions for this host and create menus for them
+	local('$beacon $user $pid');
+	foreach $beacon (beacons()) {
+		if ($beacon['internal'] in $1) {
+			($user, $pid) = values($beacon, @('user', 'pid'));
+			if (-isssh $beacon['id']) {
+				menu("$user", lambda({
+					insert_menu("ssh", @($bid));
+				}, $bid => $beacon['id']));
+			}
+			else {
+				menu("$user $+ @ $+ $pid", lambda({
+					insert_menu("beacon", @($bid));
+				}, $bid => $beacon['id']));
+			}
+		}
+	}
+
+	item "&Scan" {
+		if (%commands['portscan'] eq 'block') {	
+			operror($1);
+			show_message("This command's execution has been blocked. Remove the opsec profile to run the command.");			
+		}
+		else {	 
+			openPortScanner($1);
+		}
+	}
+
+	item "Ser&vices" { openServiceBrowser($1); }
+
+	insert_menu("targets_other");
+
+	separator();
+
+	menu "&Host" {
+		menu "&Operating System" {
+			item "&Android"   { host_update($1, $null, "Android", 1.0, $null); }
+			item "Apple &iOS" { host_update($1, $null, "Apple iOS", 1.0, $null); }
+			item "&Cisco IOS" { host_update($1, $null, "Cisco IOS", 1.0, $null); }
+			item "Fire&wall"  { host_update($1, $null, "Firewall", 1.0, $null); }
+			item "&FreeBSD"   { host_update($1, $null, "FreeBSD", 1.0, $null); }
+			item "&Linux"     { host_update($1, $null, "Linux", 1.0, $null); }
+			item "&MacOS X"   { host_update($1, $null, "MacOS X", 1.0, $null); }
+			item "&NetBSD"    { host_update($1, $null, "NetBSD", 1.0, $null); }
+			item "&OpenBSD"   { host_update($1, $null, "OpenBSD", 1.0, $null); }
+			item "&Printer"   { host_update($1, $null, "Printer", 1.0, $null); }
+			item "&Solaris"   { host_update($1, $null, "Solaris", 1.0, $null); }
+			item "&Unknown"   { host_update($1, $null, "Unknown", 1.0, $null); }
+			item "&VMware"    { host_update($1, $null, "VMware", 1.0, $null); }
+			menu "&Windows" {
+				item "1. 95/98/2000" { host_update($1, $null, "Windows", 5.0, $null); }
+				item "2. XP/2003"    { host_update($1, $null, "Windows", 5.1, $null); }
+				item "3. Vista/7"    { host_update($1, $null, "Windows", 6.0, $null); }
+				item "4. 8/10/RT"    { host_update($1, $null, "Windows", 6.2, $null); }
+			}
+		}
+		item "Set &Name..." { 
+			prompt_text("Set Name of Host(s):", "", lambda({
+				host_update($bids, $1, $null, 0.0, $null);
+			}, $bids => $1));
+		}
+		item "&Set Note..." { 
+			if (%commands['note'] eq 'block') {	
+				operror($1);
+				show_message("This command's execution has been blocked. Remove the opsec profile to run the command.");			
+			}
+			else {
+				prompt_text("Set Note for Host(s):", "", lambda({
+					host_update($bids, $null, $null, 0.0, $1);
+				}, $bids => $1));
+			}
+		}
+		separator();
+		item "&Remove Host" { host_delete($1); }
+	}
+}
+
