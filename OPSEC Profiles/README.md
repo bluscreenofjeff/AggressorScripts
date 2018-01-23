@@ -3,7 +3,7 @@
 The profiles in this folder overwrite the built-in Cobalt Strike commands to prevent certain commands from being run altogether. For example, if you are operating in an environment where process injections is very closely monitored, load the *process-injection.cna* to prevent any Beacon commands that rely on process injection from running. 
 
 Demo:
-![OPSEC Profile Demo](LINK-HERE)
+![OPSEC Profile Demo](https://bluescreenofjeff.com/assets/cobalt-strike-opsec-profiles/cobalt-strike-powershell-opsec-profile-demo.gif)
 
 The profiles allow an operator to `enable` or `block` commands. *Block* is used to prevent a command from running, while *enable* allows the command to run. To modify the state of a given command on-the-fly, you will need to unload the script, modify the source, and reload the script.
 
@@ -38,4 +38,4 @@ The profiles limit command functionality in both the Beacon console and popup (r
 
 *If you run into any operational issues while using this profiles, please open a GitHub issue!*
 
-For more information about OPSEC Profiles, please see my blog post [Cobalt Strike OPSEC Profiles](LINK-HERE)
+For more information about OPSEC Profiles, please see my blog post [Cobalt Strike OPSEC Profiles](https://bluescreenofjeff.com/2018-01-23-cobalt-strike-opsec-profiles/)
