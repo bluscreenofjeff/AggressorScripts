@@ -15,13 +15,14 @@ $stale_value = 300000;
 
 on heartbeat_30m {
 	foreach $beacon (beacons()) {
-		if ($beacon["last"] > $stale_value) {
+		if (($beacon["last"] > $stale_value) && ($beacon["pbid"] eq '')) {
 			$last_checkin = $beacon["last"] / 1000;
-			@curl_command = @('curl','-X','POST','--data-urlencode','payload={"username": "Cobalt Strike Notifier Bot", "icon_emoji": "' . $slack_emoji. '", "channel": "' . $slack_channel . '", "text":"There is a stale beacon on ' . $teamserver_hostname . ' that hasn\'t checked in for ' . $last_checkin . ' seconds. "}',$slack_webhookURL);
-			exec(@curl_command);	
+			println("There is a stale beacon on ' . $teamserver_hostname . ' that hasn\'t checked in for ' . $last_checkin . ' seconds.");
+			#@curl_command = @('curl','-X','POST','--data-urlencode','payload={"username": "Cobalt Strike Notifier Bot", "icon_emoji": "' . $slack_emoji. '", "channel": "' . $slack_channel . '", "text":"There is a stale beacon on ' . $teamserver_hostname . ' that hasn\'t checked in for ' . $last_checkin . ' seconds. "}',$slack_webhookURL);
+			#exec(@curl_command);	
 		}
 	}
-}1
+}
 
 #onload message
 @curl_command = @('curl','-X','POST','--data-urlencode','payload={"username": "Cobalt Strike Notifier Bot", "icon_emoji": "' . $slack_emoji. '", "channel": "' . $slack_channel . '", "text":"Server ' . $teamserver_hostname . ' will alert on Beacons that haven\'t checked in for ' . $stale_value . ' seconds. "}',$slack_webhookURL);
