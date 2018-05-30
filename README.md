@@ -58,7 +58,7 @@ Aggressor scripts for use with [Cobalt Strike](https://cobaltstrike.com) 3.0+
 * [https://github.com/harleyQu1nn/AggressorScripts](https://github.com/harleyQu1nn/AggressorScripts)
 * [https://github.com/rasta-mouse/Aggressor-Script](https://github.com/rasta-mouse/Aggressor-Script)
 * [https://github.com/ramen0x3f/AggressorScripts](https://github.com/ramen0x3f/AggressorScripts)
-* [https://github.com/invokethreatguy/aggressor_scripts_collection](https://github.com/invokethreatguy/aggressor_scripts_collection)
+* [https://github.com/invokethreatguy/CSASC](https://github.com/invokethreatguy/CSASC)
 
 # Submissions
 Please feel free to submit a Pull Request with fixes or improvements to any of the existing scripts; however, my intention is to only keep Aggressor scripts that I've written in this repo.
