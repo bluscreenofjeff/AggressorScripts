@@ -13,7 +13,7 @@ sub mass-dcsync {
 		closef($handle);
 		foreach $bid (@bids){
 			foreach $user (@userlistdata){
-				bdcsync($bid, $3['$fqdn'], $3['domain'] . $+ . '\\' . $+ . $user);
+				bdcsync($bid, $3['fqdn'], $3['domain'] . $+ . '\\' . $+ . $user);
 			};
 		};
 		}));
