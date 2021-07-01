@@ -26,3 +26,4 @@ on web_hit {
 	println($handle,$logentry);
 	closef($handle);
 }
+CC
